@@ -19,12 +19,15 @@ namespace KeelteKoolV2.Controllers
         }
         public IActionResult Index()
         {
+            ////gets everything
+            //var result = _context.LanguageCourses.ToList();
+            // get only some, with limited info
             var result = _context.LanguageCourses
                 .Select(x => new LanguageCourseViewModel
                 {
                     Nimetus = x.Nimetus,
-                    Keel = x.Keel
-                }).Take(20);
+                    Keel = x.Keel,
+                }).Take(20).OrderBy(x => x.Keel);
             return View(result);
 
         }
@@ -38,7 +41,7 @@ namespace KeelteKoolV2.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         //[Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create(LanguageCourseViewModel vm) 
+        public async Task<IActionResult> Create(LanguageCourseViewModel vm)
         {
             //kontrollime et vm ei oleks null
             if (vm == null)
@@ -52,7 +55,7 @@ namespace KeelteKoolV2.Controllers
             }
             //teeme uue DTO-objekti
             //asetame dtosse vmi andmed
-            var dto = new LanguageCourseDTO() 
+            var dto = new LanguageCourseDTO()
             {
                 Id = vm.Id,
                 Nimetus = vm.Nimetus,
