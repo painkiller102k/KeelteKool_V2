@@ -59,7 +59,7 @@ namespace KeelteKoolV2.ApplicationServices.Services
         {
             return null;
         }
-        public async Task<LanguageCourse> Update(Guid id)
+        public async Task<LanguageCourse> DetailsAsync(Guid id)
         {
             return null;
         }

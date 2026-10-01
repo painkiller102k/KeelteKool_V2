@@ -20,7 +20,7 @@ namespace KeelteKoolV2.Controllers
         public IActionResult Index()
         {
             ////gets everything
-            //var result = _context.LanguageCourses.ToList();
+            //var result = _context.LanguageCourses.ToList(); фыв
             // get only some, with limited info
             var result = _context.LanguageCourses
                 .Select(x => new LanguageCourseViewModel
