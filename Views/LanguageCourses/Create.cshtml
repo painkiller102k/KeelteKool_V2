@@ -1,48 +1,8 @@
 ﻿@model KeelteKoolV2.Models.LanguageCourses.LanguageCourseViewModel
 
-@* Separate update/create *@
+@* separate update create *@
 
 <div>
-    <!-- 1 -->
-    <form method="post" enctype="multipart/form-data">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <input asp-for="Id" type="hidden" />
-
-        <div class="form-group">
-            <label asp-for="Nimetus" class="control-label"></label>
-            <input asp-for="Nimetus" class="form-control" />
-            <span asp-validation-for="Nimetus" class="text-danger"></span>
-        </div>
-    </form>
-
-    <!-- 2 -->
-    <form method="post" enctype="multipart/form-data">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <input asp-for="Id" type="hidden" />
-
-        <div class="form-group">
-            <label asp-for="Nimetus" class="control-label"></label>
-            <input asp-for="Nimetus" class="form-control" />
-            <span asp-validation-for="Nimetus" class="text-danger"></span>
-        </div>
-    </form>
-
-    <!-- 3 -->
-    <form method="post" enctype="multipart/form-data">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <input asp-for="Id" type="hidden" />
-
-        <div class="form-group">
-            <label asp-for="Nimetus" class="control-label"></label>
-            <input asp-for="Nimetus" class="form-control" />
-            <span asp-validation-for="Nimetus" class="text-danger"></span>
-        </div>
-    </form>
-
-    <!-- 4 -->
     <form method="post" enctype="multipart/form-data">
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
@@ -54,9 +14,27 @@
             <span asp-validation-for="Nimetus" class="text-danger"></span>
         </div>
 
+        <div class="form-group">
+            <label asp-for="Keel" class="control-label"></label>
+            <input asp-for="Keel" class="form-control" />
+            <span asp-validation-for="Keel" class="text-danger"></span>
+        </div>
 
-       @*create only, latter add update, checkforid*@
+        <div class="form-group">
+            <label asp-for="Tase" class="control-label"></label>
+            <input asp-for="Tase" class="form-control" />
+            <span asp-validation-for="Tase" class="text-danger"></span>
+        </div>
 
-       <input asp-action="create" asp-controller="LanguageCourses" type="submit" value="Loo Keelekursus" class="btn btn-success" />
+        <div class="form-group">
+            <label asp-for="Kirjeldus" class="control-label"></label>
+            <input asp-for="Kirjeldus" class="form-control" />
+            <span asp-validation-for="Kirjeldus" class="text-danger"></span>
+        </div>
+
+        @* create only, later add update, checkforid *@
+
+        <input asp-action="create" asp-controller="LanguageCourses" type="submit" value="Loo Keelekursus" class="btn btn-success" />
+
     </form>
 </div>
