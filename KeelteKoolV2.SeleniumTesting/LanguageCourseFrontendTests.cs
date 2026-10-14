@@ -13,11 +13,7 @@ namespace KeelteKoolV2.SeleniumTesting
         public void Should_NavigateToIndex_AddSpaceshipWithCorrectData_ReturnToIndex()
         {
             /* Ülesseade */
-            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
-            driver.Url = "https://localhost:7191/"; //navigeeritav aadress
-            Thread.Sleep(3000);
-            IWebElement navigateToLanguageCourse = driver.FindElement(By.LinkText("Keelekursused"));//otsime tesitava osa lingi
-            navigateToLanguageCourse.Click(); //simuleeritud tegevus elemendiga, antud juhul klikk
+            IWebDriver driver = TestSetup_NavigateToIndex();
 
             /* tegevus */
             IWebElement indexCreateButton = driver.FindElement(By.Id("IndexCreateNewLanguageCourse_BTN"));
@@ -46,6 +42,65 @@ namespace KeelteKoolV2.SeleniumTesting
             Assert.Equal("Automaattestimise kursus", LanguageCourseNameData);
             Assert.Equal("C# + Selenium & xUnit", LanguageCourseKeelData);
             Assert.True(("Automaattestimise kursus" == LanguageCourseNameData) && ("C# + Selenium & xUnit" == LanguageCourseKeelData));
+        }
+
+        private static IWebDriver TestSetup_NavigateToIndex()
+        {
+            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
+            driver.Url = "https://localhost:7191/"; //navigeeritav aadress
+            Thread.Sleep(3000);
+            IWebElement navigateToLanguageCourse = driver.FindElement(By.LinkText("Keelekursused"));//otsime tesitava osa lingi
+            navigateToLanguageCourse.Click(); //simuleeritud tegevus elemendiga, antud juhul klikk
+            return driver;
+        }
+
+        // siia vaja details (READ) test
+        [Fact]
+        public void Should_NavigateToDetailsOfALanguageCourse_WithPreviouslyCorrectData()
+        {
+            /* ülesseade */
+            IWebDriver driver = TestSetup_NavigateToIndex();
+            var tableOfIndex = driver.FindElement(By.Id("IndexTable"));
+            List<IWebElement> rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            bool isObjectFound = false;
+
+            /* tegevus */
+            foreach (var row in rowsOfTable)
+            {
+                var nameElement = row.FindElement(By.Id("IndexTableCourseNimetus")).Text;
+                var keelElement = row.FindElement(By.Id("IndexTableCourseKeel")).Text;
+                if ((nameElement == "Automaattestimise kursus") && (keelElement == "C# + Selenium & xUnit"))
+                {
+                    isObjectFound = true;
+                    var clickAction = row
+                        .FindElement(By.Id("IndexTableCourseActions"))
+                        .FindElement(By.Id("IndexTableCourseDetails_BTN"));
+                    clickAction.Click();
+                    break;
+                }
+            }
+            Thread.Sleep(1000);
+            //find data
+            string details_id = driver.FindElement(By.Id("DD_LanguageCourseGuid")).Text;
+            string details_name = driver.FindElement(By.Id("DD_LanguageCourseNimetus")).Text;
+            string details_keel = driver.FindElement(By.Id("DD_LanguageCourseKeel")).Text;
+            string details_kirjeldus = driver.FindElement(By.Id("DD_LanguageCourseKirjeldus")).Text;
+            string details_tase = driver.FindElement(By.Id("DD_LanguageCourseTase")).Text;
+            IWebElement goBack = driver.FindElement(By.Id("DetailsBack_BTN"));
+            goBack.Click();
+            Thread.Sleep(1000);
+            driver.Quit();
+
+            /* Kontroll */
+            Assert.True(isObjectFound);
+            Assert.NotEmpty(details_id);
+            Assert.NotEmpty(details_name);
+            Assert.NotEmpty(details_keel);
+            Assert.NotEmpty(details_kirjeldus);
+            Assert.NotEmpty(details_tase);
+            Assert.Equal("Automaattestimise kursus", details_name);
+            Assert.Equal("C# + Selenium & xUnit", details_keel);
         }
     }
 }
