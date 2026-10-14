@@ -32,7 +32,7 @@ namespace KeelteKoolV2.ApplicationServices.Services
                 HtmlBody = dto.Body
             };
 
-            //failide lisamine uus
+            //failide lisamine
             foreach (var file in dto.Attachment)
             {
                 if (file.Length > 0 && file.Length < 10485760) //10MB

@@ -2,6 +2,7 @@
 using KeelteKoolV2.Core.DTO;
 using KeelteKoolV2.Core.ServiceInterface;
 using KeelteKoolV2.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -31,17 +32,19 @@ namespace KeelteKoolV2.ApplicationServices.Services
             //omistab andmed andmeedasikandeobjektist domeenimudelile
             //lahendades ära küsimused mis ei lahendatud kontrolleris, nagu näiteks id, createdat, modifiedat
             domain.Id = Guid.NewGuid();
-            domain.Nimetus = "";
-            domain.Keel = "";
+            //domain.Nimetus = "";
+            //domain.Keel = "";
             //if nimetus empty, return null
-            if (domain.Nimetus.Length < 1)
+            if (dto.Nimetus.Length < 1)
             {
                 return null;
             }
-            if (domain.Keel.Length < 1)
+            if (dto.Keel.Length < 1)
             {
                 return null;
             }
+            domain.Keel = dto.Keel;
+            domain.Nimetus = dto.Nimetus;
             domain.Kirjeldus = dto.Kirjeldus;
             domain.Tase = dto.Tase;
             domain.CreatedAt = DateTime.Now;
@@ -57,15 +60,34 @@ namespace KeelteKoolV2.ApplicationServices.Services
         }
         public async Task<LanguageCourse> Update(LanguageCourseDTO dto)
         {
-            return null;
+            LanguageCourse domain = new LanguageCourse();
+            domain.Id = (Guid)dto.Id;
+            domain.Kirjeldus = dto.Kirjeldus;
+            domain.Nimetus = dto.Nimetus;
+            domain.Keel = dto.Keel;
+            domain.ModifiedAt = DateTime.Now;
+            domain.CreatedAt = (DateTime)dto.CreatedAt;
+            domain.Tase = dto.Tase;
+            _context.ChangeTracker.Clear(); //<--- puhastab hetkel jälgitud konteksti
+            _context.LanguageCourses.Update(domain);
+            var result = await _context.SaveChangesAsync();
+
+            return domain;
         }
         public async Task<LanguageCourse> DetailsAsync(Guid id)
         {
-            return null;
+            var result = await _context.LanguageCourses
+                .FirstOrDefaultAsync(x => x.Id == id);
+            return result;
         }
         public async Task<LanguageCourse> Delete(Guid id)
         {
-            return null;
+            var result = await _context.LanguageCourses
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+            _context.LanguageCourses.Remove(result);
+            await _context.SaveChangesAsync();
+            return result;
         }
     }
 }

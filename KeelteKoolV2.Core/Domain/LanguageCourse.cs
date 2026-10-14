@@ -6,7 +6,7 @@ namespace KeelteKoolV2.Core.Domain
 {
     //Domain kaustas olev mudel näitab ära täpse andmekuju millena kursuse andmed andmebaasis ka
     //hoitakse, siin võib samuti olla valikulisi andmeid, kuid tüüpiliselt on neid vähem
-    //sest andmebaas hoiab tihtipeale ainult vajalikke andmeid.-
+    //sest andmebaas hoiab tihtipeale ainult vajalikke andmeid.
     public class LanguageCourse
     {
         public Guid Id { get; set; }

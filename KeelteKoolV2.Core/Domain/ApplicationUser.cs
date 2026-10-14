@@ -7,7 +7,7 @@ namespace KeelteKoolV2.Core.Domain
 {
     public class ApplicationUser : IdentityUser
     {
-        //public ClaimsIdentity UserCredential { get; set; } = null 0;
+        //public ClaimsIdentity UserCredential { get; set; } = null;
         public string Placeholder { get; set; }
 
         public string Name { get; set; }

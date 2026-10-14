@@ -17,7 +17,7 @@ namespace KeelteKoolV2.xUnitTesting
 {
     public abstract class TestBase
     {
-        protected IServiceProvider serviceProvider {  get; set; }
+        protected IServiceProvider serviceProvider { get; set; }
 
         protected TestBase()
         {
@@ -29,12 +29,13 @@ namespace KeelteKoolV2.xUnitTesting
         public virtual void SetupServices(IServiceCollection services)
         {
             services.AddScoped<ILanguageCoursesServices, LanguageCoursesServices>();
-            //services.AddScoped<IFileServices, FileServices>();;
+            services.AddScoped<ILecturersServices, LecturersServices>();
+            services.AddScoped<IFilesServices, FilesServices>();
             services.AddScoped<IHostEnvironment, MockIHostEnvironment>();
 
             services.AddDbContext<KeelteKoolV2Context>
                 (x =>
-                {               
+                {
                     x.UseInMemoryDatabase("TEST");
                     x.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
                 }
@@ -60,7 +61,7 @@ namespace KeelteKoolV2.xUnitTesting
 
         }
 
-        protected T Svc<T>() 
+        protected T Svc<T>()
         {
             return serviceProvider.GetService<T>();
         }
