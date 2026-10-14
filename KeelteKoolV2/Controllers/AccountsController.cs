@@ -123,16 +123,16 @@ namespace KeelteKoolV2.Controllers
         /// <returns>This view</returns>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> ConfirmEmail (string userID, string token)
+        public async Task<IActionResult> ConfirmEmail(string userID, string token)
         {
-            if (userID == null || token == null) 
+            if (userID == null || token == null)
             {
                 return RedirectToAction("Index", "Home");
             }
 
             var user = await _userManager.FindByIdAsync(userID);
 
-            if (user == null) 
+            if (user == null)
             {
                 ViewBag.ErrorMessage = $"The user with id of {userID} is not valid";
                 return NotFound();
@@ -146,7 +146,7 @@ namespace KeelteKoolV2.Controllers
             else
             {
                 ViewBag.IsSuccess = false;
-                return View(); 
+                return View();
             }
             return RedirectToAction("Index", "Home");
         }
@@ -183,7 +183,7 @@ namespace KeelteKoolV2.Controllers
                 }
 
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, true);
-                if (result.Succeeded) 
+                if (result.Succeeded)
                 {
                     if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     {
@@ -212,13 +212,13 @@ namespace KeelteKoolV2.Controllers
         }
 
         [HttpGet]
-        public IActionResult ChangePassword() 
+        public IActionResult ChangePassword()
         {
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> ChangePassword (ChangePasswordViewModel model)
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
             if (ModelState.IsValid)
             {
