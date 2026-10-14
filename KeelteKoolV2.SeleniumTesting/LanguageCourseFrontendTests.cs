@@ -1,5 +1,5 @@
 ﻿using OpenQA.Selenium;
-using OpenQA.Selenium.Firefox;
+using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -46,7 +46,7 @@ namespace KeelteKoolV2.SeleniumTesting
 
         private static IWebDriver TestSetup_NavigateToIndex()
         {
-            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
+            IWebDriver driver = new ChromeDriver(); //brauserit juhtiv ja seal tegutsev draiver
             driver.Url = "https://localhost:7191/"; //navigeeritav aadress
             Thread.Sleep(3000);
             IWebElement navigateToLanguageCourse = driver.FindElement(By.LinkText("Keelekursused"));//otsime tesitava osa lingi
