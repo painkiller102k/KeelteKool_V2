@@ -4,12 +4,56 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Xunit;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace KeelteKoolV2.SeleniumTesting
 {
+    //järjesti klass, mis omab omadusi mille järgi teste saab järjestada, väärtusi saab omistada ainult läbi konstruktori argumentide.
+    public class OrderAttribute : Attribute
+    {
+        public int Value { get; } //väärtus
+        public OrderAttribute(int value) //omistuskonstruktor
+        {
+            Value = value;
+        }
+    }
+    //xUnit järjesti mis implementeerib ITestCaseOrdereri liidesest "ORderTestCases" meetodi, ning see meetod on see, mida me kasutame
+    //testide käivitamisel nende testide õigesti järjestamiseks. Järjestatakse vastavalt OrderAttribute omadusele
+    public class PriorityOrderer : ITestCaseOrderer
+    {
+        //meetod võtab sisse kõik test cased
+        public IEnumerable<TTestCase> OrderTestCases<TTestCase>(IEnumerable<TTestCase> testCases) where TTestCase : ITestCase
+        {
+            //toimub sorteerimistegevus kus järjestatakse arendaja kirjutatud järjesti järgi.
+            var result = testCases.OrderBy(test =>
+            {
+                //otsitakse järjesti omadusena
+                var method = test.TestMethod.Method.GetCustomAttributes(typeof(OrderAttribute)).FirstOrDefault();
+                //kui ei leita
+                if (method == null)
+                {
+                    //antakse tagasi maksimaalne täisarv, ehk test teostatakse kohe, ega ei panda teiste potensiaalselt ÕIGES
+                    //järjekorras olevate testide vahele
+                    return int.MaxValue;
+                }
+                //kui leitakse
+                else
+                {
+                    //siis tagastatakse selle järjesti omaduse väärtus
+                    return method.GetNamedArgument<int>(nameof(OrderAttribute.Value));
+                }
+            }).ToList(); //testid asetatakse nimekirja
+
+            return result; //sorteeritud tulemus tagastatakse
+        }
+    }
+
+    [TestCaseOrderer("KeelteKoolV2.SeleniumTesting.PriorityOrderer", "KeelteKoolV2.SeleniumTesting")]
     public class LanguageCourseFrontendTests
     {
         [Fact]
+        [Order(1)]
         public void Should_NavigateToIndex_AddLanguageCourseWithCorrectData_ReturnToIndex()
         {
             /* Ülesseade */
@@ -39,6 +83,7 @@ namespace KeelteKoolV2.SeleniumTesting
         }
         // siia vaja details (READ) test
         [Fact]
+        [Order(2)]
         public void Should_NavigateToDetailsOfALanguageCourse_WithPreviouslyCorrectData()
         {
             /* ülesseade */
@@ -87,6 +132,7 @@ namespace KeelteKoolV2.SeleniumTesting
         }
         //vaja teha uuenduse test (UPDATE)
         [Fact]
+        [Order(3)]
         public void Should_UpdateDetailsOfLanguageCourse_WithNewData()
         {
             /* Ülesseade */
@@ -160,6 +206,7 @@ namespace KeelteKoolV2.SeleniumTesting
         }
         //Delete test
         [Fact]
+        [Order(4)]
         public void Should_DeleteLanguageCourse_FromDeleteView()
         {
             /* ülesseade */
