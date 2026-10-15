@@ -158,6 +158,54 @@ namespace KeelteKoolV2.SeleniumTesting
             Assert.NotEqual("Kursusel õpime mis on automaattestimine, kuidas erineb manuaaltestimisest ning kuidas kirjutada " +
                     "backendi ja frontendi automaatteste.", details_tase);
         }
+        //Delete test
+        [Fact]
+        public void Should_DeleteLanguageCourse_FromDeleteView()
+        {
+            /* ülesseade */
+            IWebDriver driver = TestSetup_NavigateToIndex();
+            var tableOfIndex = driver.FindElement(By.Id("IndexTable"));
+            List<IWebElement> rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            bool isObjectFound = false;
+
+            /* tegevus */
+            foreach (var row in rowsOfTable)
+            {
+                var nameElement = row.FindElement(By.Id("IndexTableCourseNimetus")).Text;
+                var keelElement = row.FindElement(By.Id("IndexTableCourseKeel")).Text;
+                if ((nameElement == "Manuaaltestimise kursus") && (keelElement == "Mantis, Excel"))
+                {
+                    isObjectFound = true;
+                    var clickAction = row
+                        .FindElement(By.Id("IndexTableCourseActions"))
+                        .FindElement(By.Id("IndexTableCourseDelete_BTN"));
+                    clickAction.Click();
+                    break;
+                }
+            }
+            Thread.Sleep(1000);
+            IWebElement clickDelete = driver.FindElement(By.Id("DeleteDelete_BTN"));
+            clickDelete.Click();
+
+            //kontroll
+            isObjectFound = false;
+            tableOfIndex = driver.FindElement(By.Id("IndexTable"));
+            rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            foreach (var row in rowsOfTable)
+            {
+                var nameElement = row.FindElement(By.Id("IndexTableCourseNimetus")).Text;
+                var keelElement = row.FindElement(By.Id("IndexTableCourseKeel")).Text;
+                if ((nameElement == "Manuaaltestimise kursus") && (keelElement == "Mantis, Excel"))
+                {
+                    isObjectFound = true;
+                    break;
+                }
+            }
+            Assert.False(isObjectFound);
+            Assert.True(!isObjectFound);
+        }//eof
 
         private void DataClear_CreateUpdate(IWebDriver driver)
         {
