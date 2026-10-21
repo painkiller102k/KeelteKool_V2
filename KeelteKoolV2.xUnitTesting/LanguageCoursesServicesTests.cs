@@ -186,5 +186,41 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("DeleteExistingLast", existingResult.LastName);
         }
 
+
+        /// <summary>
+        /// Kontrollib, et olematu ID-ga õppejõu uuendamisel tagastatakse null.
+        /// </summary>
+        [Fact]
+        public async Task Should_ReturnNull_WhenUpdatingNonExistingLecturer()
+        {
+            // Arrange
+            LecturerDTO existingDto = new LecturerDTO();
+            existingDto.FirstName = "UpdateExistingTest";
+            existingDto.LastName = "UpdateExistingLast";
+            existingDto.Qualifications = "Bachelor";
+
+            var existingLecturer = await Svc<ILecturersServices>().Create(existingDto);
+
+            LecturerDTO updateDto = new LecturerDTO();
+            updateDto.Id = Guid.NewGuid();
+            updateDto.FirstName = "ChangedName";
+            updateDto.LastName = "ChangedLast";
+            updateDto.Qualifications = "Master";
+
+            // Act
+            var result = await Svc<ILecturersServices>().Update(updateDto);
+
+            var existingResult = await Svc<ILecturersServices>()
+                .DetailAsync(existingLecturer.Id);
+
+            // Assert
+            Assert.Null(result);
+            Assert.NotNull(existingResult);
+            Assert.Equal(existingLecturer.Id, existingResult.Id);
+            Assert.Equal("UpdateExistingTest", existingResult.FirstName);
+            Assert.Equal("UpdateExistingLast", existingResult.LastName);
+            Assert.Equal("Bachelor", existingResult.Qualifications);
+        }
+
     }
 }
