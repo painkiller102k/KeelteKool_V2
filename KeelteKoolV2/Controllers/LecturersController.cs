@@ -80,7 +80,7 @@ namespace KeelteKoolV2.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-
+        
         [HttpGet]
         public async Task<IActionResult> Details(Guid? id)
         {
@@ -107,6 +107,71 @@ namespace KeelteKoolV2.Controllers
             };
 
             return View(model);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> Update(Guid? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var lecturer = await _lecturersServices.DetailAsync(id.Value);
+
+            if (lecturer == null)
+            {
+                return NotFound();
+            }
+
+            var model = new LecturerCreateUpdateViewModel
+            {
+                Id = lecturer.Id,
+                FirstName = lecturer.FirstName,
+                LastName = lecturer.LastName,
+                Qualifications = lecturer.Qualifications,
+                UserID = lecturer.UserID,
+                CreatedAt = lecturer.CreatedAt,
+                ModifiedAt = lecturer.ModifiedAt
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Update(
+            Guid id,
+            LecturerCreateUpdateViewModel model)
+        {
+            if (id != model.Id)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var dto = new KeelteKoolV2.Core.DTO.LecturerDTO
+            {
+                Id = id,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Qualifications = model.Qualifications,
+                UserID = model.UserID
+            };
+
+            var result = await _lecturersServices.Update(dto);
+
+            if (result == null)
+            {
+                return NotFound();
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
 
