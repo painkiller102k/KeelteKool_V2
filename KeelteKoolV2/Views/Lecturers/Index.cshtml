@@ -1,0 +1,35 @@
+﻿@model IEnumerable<KeelteKoolV2.Models.Lecturers.LecturerViewModel>
+
+@{
+    ViewData["Title"] = "Lecturers";
+}
+
+<h1>Lecturers</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Add lecturer</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Qualifications</th>
+            <th>Created at</th>
+            <th>Modified at</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var lecturer in Model)
+        {
+            <tr>
+                <td>@lecturer.FirstName</td>
+                <td>@lecturer.LastName</td>
+                <td>@lecturer.Qualifications</td>
+                <td>@lecturer.CreatedAt?.ToString("dd.MM.yyyy HH:mm")</td>
+                <td>@lecturer.ModifiedAt?.ToString("dd.MM.yyyy HH:mm")</td>
+            </tr>
+        }
+    </tbody>
+</table>
