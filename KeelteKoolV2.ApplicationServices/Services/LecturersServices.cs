@@ -2,6 +2,7 @@
 using KeelteKoolV2.Core.DTO;
 using KeelteKoolV2.Core.ServiceInterface;
 using KeelteKoolV2.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -52,9 +53,12 @@ namespace KeelteKoolV2.ApplicationServices.Services
             return null;
         }
 
-        public Task<Lecturer> DetailAsync(Guid id)
+        public async Task<Lecturer> DetailAsync(Guid id)
         {
-            return null;
+            var lecturer = await _context.Lecturers
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            return lecturer;
         }
 
         public Task<Lecturer> Update(LecturerDTO dto)
