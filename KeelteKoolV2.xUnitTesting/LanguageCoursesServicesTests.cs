@@ -125,6 +125,36 @@ namespace KeelteKoolV2.xUnitTesting
         }
 
 
+        /// <summary>
+        /// Kontrollib, et olematu ID korral ei leita andmebaasist õppejõudu.
+        /// </summary>
+        [Fact]
+        public async Task Should_ReturnNull_WhenLecturerDoesNotExist()
+        {
+            // Arrange
+            LecturerDTO dto = new LecturerDTO();
+            dto.FirstName = "ExistingTest";
+            dto.LastName = "ExistingLast";
+            dto.Qualifications = "Bachelor";
+
+            var existingLecturer = await Svc<ILecturersServices>().Create(dto);
+            Guid nonExistingId = Guid.NewGuid();
+
+            // Act
+            var result = await Svc<ILecturersServices>()
+                .DetailAsync(nonExistingId);
+
+            var existingResult = await Svc<ILecturersServices>()
+                .DetailAsync(existingLecturer.Id);
+
+            // Assert
+            Assert.Null(result);
+            Assert.NotNull(existingResult);
+            Assert.Equal(existingLecturer.Id, existingResult.Id);
+            Assert.Equal("ExistingTest", existingResult.FirstName);
+            Assert.Equal("ExistingLast", existingResult.LastName);
+        }
+
 
     }
 }
