@@ -94,23 +94,36 @@ namespace KeelteKoolV2.xUnitTesting
         }
 
 
-        //delete test
+        /// <summary>
+        /// Kontrollib, et õppejõud kustutatakse andmebaasist õige ID alusel.
+        /// </summary>
         [Fact]
         public async Task Should_DeleteLecturer_WhenValidIDIsGiven()
         {
-            //ülesseade
+            // Arrange
             LecturerDTO dto = new LecturerDTO();
-            dto.FirstName = "Test";
-            dto.LastName = "Test";
-            dto.Qualifications = "Testicles";
+            dto.FirstName = "DeleteTest";
+            dto.LastName = "DeleteLast";
+            dto.Qualifications = "Bachelor";
+
             var createdLecturer = await Svc<ILecturersServices>().Create(dto);
 
-            //tegevus
-            var result = await Svc<ILecturersServices>().Delete(createdLecturer.Id);
+            // Act
+            var result = await Svc<ILecturersServices>()
+                .Delete(createdLecturer.Id);
 
-            //kontroll
+            var deletedLecturer = await Svc<ILecturersServices>()
+                .DetailAsync(createdLecturer.Id);
+
+            // Assert
             Assert.NotNull(result);
+            Assert.Equal(createdLecturer.Id, result.Id);
+            Assert.Equal("DeleteTest", result.FirstName);
+            Assert.Equal("DeleteLast", result.LastName);
+            Assert.Equal("Bachelor", result.Qualifications);
+            Assert.Null(deletedLecturer);
         }
+
 
 
     }
