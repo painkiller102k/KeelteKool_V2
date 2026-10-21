@@ -9,22 +9,29 @@ namespace KeelteKoolV2.xUnitTesting
 {
     public class LecturersServicesTests : TestBase
     {
+        /// <summary>
+        /// Kontrollib, et uue õppejõu loomisel salvestatakse tema andmed õigesti.
+        /// </summary>
         [Fact]
         public async Task Should_AddNewLecturer_WhenResultISReturned()
         {
-            //ülesseade
+            // Arrange
             LecturerDTO dto = new LecturerDTO();
             dto.FirstName = "Test";
             dto.LastName = "Test";
             dto.Qualifications = "Testicles";
-            //dto.Image = 
 
-            //tegevus
+            // Act
             var result = await Svc<ILecturersServices>().Create(dto);
 
-            //kontroll
+            // Assert
             Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal("Test", result.FirstName);
+            Assert.Equal("Test", result.LastName);
+            Assert.Equal("Testicles", result.Qualifications);
         }
+
 
         //details test
         [Fact]
