@@ -1,0 +1,42 @@
+﻿@model KeelteKoolV2.Models.Students.StudentViewModel
+
+@{
+    ViewBag.Title = "Minu andmed";
+}
+
+<div class="h1">
+    Minu andmed
+</div>
+
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+
+        <div class="mb-3">
+            <strong>Eesnimi:</strong>
+            @Model.FirstName
+        </div>
+
+        <div class="mb-3">
+            <strong>Perekonnanimi:</strong>
+            @Model.LastName
+        </div>
+
+        <div class="mb-3">
+            <strong>User ID:</strong>
+            @Model.UserID
+        </div>
+
+        <div class="mb-3">
+            <strong>Loodud:</strong>
+            @Model.CreatedAt
+        </div>
+
+        <div class="mb-3">
+            <strong>Muudetud:</strong>
+            @Model.ModifiedAt
+        </div>
+
+    </div>
+</div>
