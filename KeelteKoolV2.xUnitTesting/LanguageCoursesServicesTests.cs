@@ -156,5 +156,35 @@ namespace KeelteKoolV2.xUnitTesting
         }
 
 
+        /// <summary>
+        /// Kontrollib, et olematu ID korral ei kustutata ühtegi õppejõudu.
+        /// </summary>
+        [Fact]
+        public async Task Should_ReturnNull_WhenDeletingNonExistingLecturer()
+        {
+            // Arrange
+            LecturerDTO dto = new LecturerDTO();
+            dto.FirstName = "DeleteExistingTest";
+            dto.LastName = "DeleteExistingLast";
+            dto.Qualifications = "Master";
+
+            var existingLecturer = await Svc<ILecturersServices>().Create(dto);
+            Guid nonExistingId = Guid.NewGuid();
+
+            // Act
+            var result = await Svc<ILecturersServices>()
+                .Delete(nonExistingId);
+
+            var existingResult = await Svc<ILecturersServices>()
+                .DetailAsync(existingLecturer.Id);
+
+            // Assert
+            Assert.Null(result);
+            Assert.NotNull(existingResult);
+            Assert.Equal(existingLecturer.Id, existingResult.Id);
+            Assert.Equal("DeleteExistingTest", existingResult.FirstName);
+            Assert.Equal("DeleteExistingLast", existingResult.LastName);
+        }
+
     }
 }
