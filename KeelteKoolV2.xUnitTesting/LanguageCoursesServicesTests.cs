@@ -222,5 +222,37 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("Bachelor", existingResult.Qualifications);
         }
 
+
+        /// <summary>
+        /// Kontrollib, et null väärtusega DTO korral ei looda uut õppejõudu
+        /// ega muudeta olemasolevaid andmeid.
+        /// </summary>
+        [Fact]
+        public async Task Should_ReturnNull_WhenCreatingWithNullDto()
+        {
+            // Arrange
+            var service = Svc<ILecturersServices>();
+
+            var lecturer = await service.Create(new LecturerDTO
+            {
+                FirstName = "Test",
+                LastName = "Lecturer",
+                Qualifications = "Master"
+            });
+
+            // Act
+            var result = await service.Create(null!);
+            var existingLecturer = await service.DetailAsync(lecturer.Id);
+
+            // Assert
+            Assert.Null(result);
+            Assert.NotNull(existingLecturer);
+            Assert.Equal(lecturer.Id, existingLecturer.Id);
+            Assert.Equal("Test", existingLecturer.FirstName);
+            Assert.Equal("Lecturer", existingLecturer.LastName);
+            Assert.Equal("Master", existingLecturer.Qualifications);
+        }
+
+
     }
 }
