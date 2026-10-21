@@ -1,0 +1,32 @@
+﻿@model KeelteKoolV2.Models.Lecturers.LecturerViewModel
+
+@{
+    ViewData["Title"] = "Lecturer Details";
+}
+
+<h1>Lecturer Details</h1>
+
+<div>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-3">First name</dt>
+        <dd class="col-sm-9">@Model.FirstName</dd>
+
+        <dt class="col-sm-3">Last name</dt>
+        <dd class="col-sm-9">@Model.LastName</dd>
+
+        <dt class="col-sm-3">Qualifications</dt>
+        <dd class="col-sm-9">@Model.Qualifications</dd>
+
+        <dt class="col-sm-3">Created at</dt>
+        <dd class="col-sm-9">@Model.CreatedAt?.ToString("dd.MM.yyyy HH:mm")</dd>
+
+        <dt class="col-sm-3">Modified at</dt>
+        <dd class="col-sm-9">@Model.ModifiedAt?.ToString("dd.MM.yyyy HH:mm")</dd>
+    </dl>
+</div>
+
+<div>
+    <a asp-action="Index" class="btn btn-secondary">Back to list</a>
+    <a asp-action="Update" asp-route-id="@Model.Id" class="btn btn-primary">Edit</a>
+</div>

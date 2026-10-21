@@ -80,5 +80,35 @@ namespace KeelteKoolV2.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+
+        [HttpGet]
+        public async Task<IActionResult> Details(Guid? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var lecturer = await _lecturersServices.DetailAsync(id.Value);
+
+            if (lecturer == null)
+            {
+                return NotFound();
+            }
+
+            var model = new LecturerViewModel
+            {
+                Id = lecturer.Id,
+                FirstName = lecturer.FirstName,
+                LastName = lecturer.LastName,
+                Qualifications = lecturer.Qualifications,
+                CreatedAt = lecturer.CreatedAt,
+                ModifiedAt = lecturer.ModifiedAt
+            };
+
+            return View(model);
+        }
+
+
     }
 }
