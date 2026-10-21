@@ -22,7 +22,7 @@ namespace KeelteKoolV2.Controllers
             _lecturersServices = lecturersServices;
             _filesServices = filesServices;
         }
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index()    
         {
             var lecturers = await _context.Lecturers
                 .Select(x => new LecturerViewModel
@@ -40,5 +40,45 @@ namespace KeelteKoolV2.Controllers
 
             return View(lecturers);
         }
+
+
+        [HttpGet]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(
+            LecturerCreateUpdateViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var dto = new KeelteKoolV2.Core.DTO.LecturerDTO
+            {
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Qualifications = model.Qualifications,
+                UserID = model.UserID
+            };
+
+            var result = await _lecturersServices.Create(dto);
+
+            if (result == null)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Lecturer could not be created.");
+
+                return View(model);
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
     }
 }
