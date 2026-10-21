@@ -28,11 +28,11 @@ namespace KeelteKoolV2.ApplicationServices.Services
             domain.Id = Guid.NewGuid();
             if (dto.FirstName.Length < 1)
             {
-                dto.FirstName = "Jane";
+                dto.FirstName = "Martin";
             }
             if (dto.LastName.Length < 1)
             {
-                dto.LastName = "Doe";
+                dto.LastName = "Rossakov";
             }
             domain.FirstName = dto.FirstName;
             domain.LastName = dto.LastName;

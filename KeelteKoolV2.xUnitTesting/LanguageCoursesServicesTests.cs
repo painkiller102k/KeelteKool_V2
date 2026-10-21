@@ -284,6 +284,33 @@ namespace KeelteKoolV2.xUnitTesting
         }
 
 
+        /// <summary>
+        /// Kontrollib, et tühjad ees- ja perekonnanimed asendatakse vaikeväärtustega.
+        /// </summary>
+        [Fact]
+        public async Task Should_UseDefaultNames_WhenFirstNameAndLastNameAreEmpty()
+        {
+            // Arrange
+            var service = Svc<ILecturersServices>();
+
+            var dto = new LecturerDTO
+            {
+                FirstName = "",
+                LastName = "",
+                Qualifications = "Master"
+            };
+
+            // Act
+            var result = await service.Create(dto);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal("Martin", result.FirstName);
+            Assert.Equal("Rossakov", result.LastName);
+            Assert.Equal("Master", result.Qualifications);
+        }
+
 
     }
 }
