@@ -61,9 +61,31 @@ namespace KeelteKoolV2.ApplicationServices.Services
             return lecturer;
         }
 
-        public Task<Lecturer> Update(LecturerDTO dto)
+        public async Task<Lecturer> Update(LecturerDTO dto)
         {
-            return null;
+            if (dto == null)
+            {
+                return null;
+            }
+
+            var lecturer = await _context.Lecturers
+                .FirstOrDefaultAsync(x => x.Id == dto.Id);
+
+            if (lecturer == null)
+            {
+                return null;
+            }
+
+            lecturer.FirstName = dto.FirstName;
+            lecturer.LastName = dto.LastName;
+            lecturer.Qualifications = dto.Qualifications;
+            lecturer.UserID = dto.UserID;
+            lecturer.ModifiedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            return lecturer;
         }
+
     }
 }

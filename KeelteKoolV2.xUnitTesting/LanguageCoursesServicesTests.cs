@@ -1,5 +1,6 @@
 ﻿using KeelteKoolV2.Core.DTO;
 using KeelteKoolV2.Core.ServiceInterface;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -32,47 +33,66 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("Testicles", result.Qualifications);
         }
 
-
-        //details test
+        /// <summary>
+        /// Kontrollib, et õppejõu andmed leitakse andmebaasist õige ID alusel.
+        /// </summary>
         [Fact]
         public async Task Should_GetLecturerDetails_WhenGuidISNotNull()
         {
-            //ülesseade
+            // Arrange
             LecturerDTO dto = new LecturerDTO();
-            dto.FirstName = "Test";
-            dto.LastName = "Test";
-            dto.Qualifications = "Testicles";
+            dto.FirstName = "DetailTest";
+            dto.LastName = "DetailLast";
+            dto.Qualifications = "Master";
+
             var createdLecturer = await Svc<ILecturersServices>().Create(dto);
 
-            //tegevus
-            var result = await Svc<ILecturersServices>().DetailAsync(createdLecturer.Id);
+            // Act
+            var result = await Svc<ILecturersServices>()
+                .DetailAsync(createdLecturer.Id);
 
-            //kontroll
+            // Assert
             Assert.NotNull(result);
+            Assert.Equal(createdLecturer.Id, result.Id);
+            Assert.Equal("DetailTest", result.FirstName);
+            Assert.Equal("DetailLast", result.LastName);
+            Assert.Equal("Master", result.Qualifications);
+            Assert.NotEqual(Guid.Empty, result.Id);
         }
 
-        //update test
+
+        /// <summary>
+        /// Kontrollib, et õppejõu andmeid saab andmebaasis edukalt uuendada.
+        /// </summary>
         [Fact]
         public async Task Should_UpdateLecturerWithNewData_WhenDataIsDifferentFromDB()
         {
-            //ülesseade
+            // Arrange
             LecturerDTO dto = new LecturerDTO();
-            dto.FirstName = "Test";
-            dto.LastName = "Test";
-            dto.Qualifications = "Testicles";
+            dto.FirstName = "UpdateTest";
+            dto.LastName = "OldLastName";
+            dto.Qualifications = "Bachelor";
+
             var createdLecturer = await Svc<ILecturersServices>().Create(dto);
 
-            LecturerDTO updatedinfo = new LecturerDTO();
-            updatedinfo.FirstName = "TestUusinfo";
-            updatedinfo.LastName = "Test2222222222";
-            updatedinfo.Qualifications = "Maximum OwO";
+            LecturerDTO updatedInfo = new LecturerDTO();
+            updatedInfo.Id = createdLecturer.Id;
+            updatedInfo.FirstName = "UpdatedFirstName";
+            updatedInfo.LastName = "UpdatedLastName";
+            updatedInfo.Qualifications = "Master";
 
-            //tegevus
-            var result = await Svc<ILecturersServices>().Update(updatedinfo);
+            // Act
+            var result = await Svc<ILecturersServices>().Update(updatedInfo);
 
-            //kontroll
+            // Assert
             Assert.NotNull(result);
+            Assert.Equal(createdLecturer.Id, result.Id);
+            Assert.Equal("UpdatedFirstName", result.FirstName);
+            Assert.Equal("UpdatedLastName", result.LastName);
+            Assert.Equal("Master", result.Qualifications);
+            Assert.NotEqual("OldLastName", result.LastName);
         }
+
 
         //delete test
         [Fact]
