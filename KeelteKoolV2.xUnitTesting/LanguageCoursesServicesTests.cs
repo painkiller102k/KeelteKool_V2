@@ -254,5 +254,36 @@ namespace KeelteKoolV2.xUnitTesting
         }
 
 
+        /// <summary>
+        /// Kontrollib, et tühja GUID väärtuse korral õppejõudu ei leita.
+        /// </summary>
+        [Fact]
+        public async Task Should_ReturnNull_WhenSearchingWithEmptyGuid()
+        {
+            // Arrange
+            var service = Svc<ILecturersServices>();
+
+            var lecturer = await service.Create(new LecturerDTO
+            {
+                FirstName = "Existing",
+                LastName = "Lecturer",
+                Qualifications = "Master"
+            });
+
+            // Act
+            var result = await service.DetailAsync(Guid.Empty);
+            var existingLecturer = await service.DetailAsync(lecturer.Id);
+
+            // Assert
+            Assert.Null(result);
+            Assert.NotNull(existingLecturer);
+            Assert.Equal(lecturer.Id, existingLecturer.Id);
+            Assert.Equal("Existing", existingLecturer.FirstName);
+            Assert.Equal("Lecturer", existingLecturer.LastName);
+            Assert.Equal("Master", existingLecturer.Qualifications);
+        }
+
+
+
     }
 }
