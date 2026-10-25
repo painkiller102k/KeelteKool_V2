@@ -18,6 +18,7 @@ namespace KeelteKoolV2.Controllers
             _context = context;
             _languageCoursesServices = languageCoursesServices;
         }
+        [Authorize(Roles = "Student,Lecturer,Admin")]
         public IActionResult Index()
         {
             ////gets everything
@@ -35,6 +36,7 @@ namespace KeelteKoolV2.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Lecturer,Admin")]
         public IActionResult Create()
         {
             LanguageCourseCreateUpdateViewModel vm = new();
@@ -43,6 +45,7 @@ namespace KeelteKoolV2.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Lecturer,Admin")]
         public async Task<IActionResult> Create(LanguageCourseCreateUpdateViewModel vm)
         {
             //kontrollime et vm ei oleks null
@@ -81,6 +84,7 @@ namespace KeelteKoolV2.Controllers
             }
         }
         [HttpGet]
+        [Authorize(Roles = "Student,Lecturer,Admin")]
         public async Task<IActionResult> Details(Guid id)
         {
             if (id == Guid.Empty)
@@ -105,6 +109,7 @@ namespace KeelteKoolV2.Controllers
             return View("DetailsDelete", vm);
         }
         [HttpGet]
+        [Authorize(Roles = "Lecturer,Admin")]
         public async Task<IActionResult> Update(Guid id)
         {
             if (id == Guid.Empty)
@@ -126,6 +131,7 @@ namespace KeelteKoolV2.Controllers
             return View("CreateUpdate", vm);
         }
         [HttpPost]
+        [Authorize(Roles = "Lecturer,Admin")]
         public async Task<IActionResult> Update(LanguageCourseCreateUpdateViewModel vm)
         {
             if (!ModelState.IsValid)
@@ -151,6 +157,7 @@ namespace KeelteKoolV2.Controllers
             return RedirectToAction(nameof(Update), new { id = resultId });
         }
         [HttpGet]
+        [Authorize(Roles = "Lecturer,Admin")]
         public async Task<IActionResult> Delete(Guid? id)
         {
             if (id == Guid.Empty)
@@ -176,6 +183,7 @@ namespace KeelteKoolV2.Controllers
         }
         [HttpPost]
         [ActionName("DeleteConfirmed")]
+        [Authorize(Roles = "Lecturer,Admin")]
         public async Task<IActionResult> Delete(Guid id)
         {
             var courseToDelete = await _languageCoursesServices.Delete(id);
