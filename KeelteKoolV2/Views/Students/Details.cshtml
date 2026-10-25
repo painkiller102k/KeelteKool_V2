@@ -1,0 +1,20 @@
+@model KeelteKoolV2.Models.Students.StudentViewModel
+
+@{
+    ViewData["Title"] = "Student details";
+}
+
+<h1>Student details</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">First name</dt>
+    <dd class="col-sm-9">@Model.FirstName</dd>
+    <dt class="col-sm-3">Last name</dt>
+    <dd class="col-sm-9">@Model.LastName</dd>
+    <dt class="col-sm-3">Created at</dt>
+    <dd class="col-sm-9">@Model.CreatedAt?.ToString("dd.MM.yyyy HH:mm")</dd>
+    <dt class="col-sm-3">Modified at</dt>
+    <dd class="col-sm-9">@Model.ModifiedAt?.ToString("dd.MM.yyyy HH:mm")</dd>
+</dl>
+
+<a asp-action="Index" class="btn btn-secondary">Back to list</a>

@@ -1,0 +1,29 @@
+@model IEnumerable<KeelteKoolV2.Models.Students.StudentViewModel>
+
+@{
+    ViewData["Title"] = "Students";
+}
+
+<h1>Students</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>First name</th>
+            <th>Last name</th>
+            <th>Created at</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var student in Model)
+    {
+        <tr>
+            <td>@student.FirstName</td>
+            <td>@student.LastName</td>
+            <td>@student.CreatedAt?.ToString("dd.MM.yyyy HH:mm")</td>
+            <td><a asp-action="Details" asp-route-id="@student.Id">Details</a></td>
+        </tr>
+    }
+    </tbody>
+</table>
