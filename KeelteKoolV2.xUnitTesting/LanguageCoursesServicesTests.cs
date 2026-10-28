@@ -446,5 +446,49 @@ namespace KeelteKoolV2.xUnitTesting
         }
 
 
+        /// <summary>
+        /// Kontrollib, et õppejõu uuendatud andmed säilivad andmebaasis.
+        /// </summary>
+        [Fact]
+        public async Task Should_SaveUpdatedLecturerAndRetrieveItFromDatabase()
+        {
+            // Arrange
+            var service = Svc<ILecturersServices>();
+
+            var dto = new LecturerDTO
+            {
+                FirstName = "BeforeUpdate",
+                LastName = "OldLastName",
+                Qualifications = "Bachelor"
+            };
+
+            var created = await service.Create(dto);
+
+            var updateDto = new LecturerDTO
+            {
+                Id = created!.Id,
+                FirstName = "AfterUpdate",
+                LastName = "NewLastName",
+                Qualifications = "Master"
+            };
+
+            // Act
+            var updated = await service.Update(updateDto);
+            var saved = await service.DetailAsync(created.Id);
+
+            // Assert
+            Assert.NotNull(updated);
+            Assert.Equal(created.Id, updated.Id);
+            Assert.Equal("AfterUpdate", updated.FirstName);
+            Assert.Equal("NewLastName", updated.LastName);
+            Assert.Equal("Master", updated.Qualifications);
+            Assert.NotNull(saved);
+            Assert.Equal("AfterUpdate", saved.FirstName);
+            Assert.Equal("NewLastName", saved.LastName);
+            Assert.Equal("Master", saved.Qualifications);
+        }
+
+
+
     }
 }
