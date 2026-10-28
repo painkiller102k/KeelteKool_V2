@@ -26,11 +26,11 @@ namespace KeelteKoolV2.ApplicationServices.Services
             //convert to domain-type
             Lecturer domain = new Lecturer();
             domain.Id = Guid.NewGuid();
-            if (dto.FirstName.Length < 1)
+            if (string.IsNullOrEmpty(dto.FirstName))
             {
                 dto.FirstName = "Martin";
             }
-            if (dto.LastName.Length < 1)
+            if (string.IsNullOrEmpty(dto.LastName))
             {
                 dto.LastName = "Rossakov";
             }
