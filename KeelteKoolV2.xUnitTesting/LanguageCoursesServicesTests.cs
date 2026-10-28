@@ -312,5 +312,69 @@ namespace KeelteKoolV2.xUnitTesting
         }
 
 
+        /// <summary>
+        /// Kontrollib, et õppejõu loomisel salvestatakse kasutaja ID ja kuupäevad.
+        /// </summary>
+        [Fact]
+        public async Task Should_SaveUserIdAndDates_WhenCreatingLecturer()
+        {
+            // Arrange
+            var userId = "test-user-123";
+            var beforeCreate = DateTime.Now;
+
+            var dto = new LecturerDTO
+            {
+                FirstName = "DateTest",
+                LastName = "Lecturer",
+                Qualifications = "Master",
+                UserID = userId
+            };
+
+            // Act
+            var result = await Svc<ILecturersServices>().Create(dto);
+            var afterCreate = DateTime.Now;
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal(userId, result.UserID);
+            Assert.True(result.CreatedAt >= beforeCreate);
+            Assert.True(result.CreatedAt <= afterCreate);
+            Assert.True(result.ModifiedAt >= beforeCreate);
+            Assert.True(result.ModifiedAt <= afterCreate);
+        }
+
+
+        /// <summary>
+        /// Kontrollib, et null väärtusega DTO korral ei uuendata õppejõu andmeid.
+        /// </summary>
+        [Fact]
+        public async Task Should_ReturnNull_WhenUpdatingWithNullDto()
+        {
+            // Arrange
+            var service = Svc<ILecturersServices>();
+
+            var lecturer = await service.Create(new LecturerDTO
+            {
+                FirstName = "Original",
+                LastName = "Lecturer",
+                Qualifications = "Bachelor",
+                UserID = "original-user"
+            });
+
+            // Act
+            var result = await service.Update(null!);
+            var existing = await service.DetailAsync(lecturer.Id);
+
+            // Assert
+            Assert.Null(result);
+            Assert.NotNull(existing);
+            Assert.Equal(lecturer.Id, existing.Id);
+            Assert.Equal("Original", existing.FirstName);
+            Assert.Equal("Lecturer", existing.LastName);
+            Assert.Equal("Bachelor", existing.Qualifications);
+            Assert.Equal("original-user", existing.UserID);
+        }
+
     }
 }

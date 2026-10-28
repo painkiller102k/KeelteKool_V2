@@ -33,13 +33,12 @@ namespace KeelteKoolV2.xUnitTesting
             services.AddScoped<IFilesServices, FilesServices>();
             services.AddScoped<IHostEnvironment, MockIHostEnvironment>();
 
-            services.AddDbContext<KeelteKoolV2Context>
-                (x =>
-                {
-                    x.UseInMemoryDatabase("TEST");
-                    x.ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
-                }
-                );
+            services.AddDbContext<KeelteKoolV2Context>(x =>
+            {
+                x.UseInMemoryDatabase(Guid.NewGuid().ToString());
+                x.ConfigureWarnings(w =>
+                    w.Ignore(InMemoryEventId.TransactionIgnoredWarning));
+            });
             RegisterMacros(services);
         }
 
