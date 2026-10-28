@@ -376,7 +376,41 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("original-user", existing.UserID);
         }
 
+        /// <summary>
+        /// Kontrollib, et null väärtusega ees- ja perekonnanimed
+        /// asendatakse õppejõu loomisel vaikeväärtustega.
+        /// </summary>
+        [Fact]
+        public async Task Should_UseDefaultNames_WhenFirstNameAndLastNameAreNull()
+        {
+            // Arrange
+            var service = Svc<ILecturersServices>();
 
+            var dto = new LecturerDTO
+            {
+                FirstName = null!,
+                LastName = null!,
+                Qualifications = "Master",
+                UserID = "null-name-test"
+            };
+
+            // Act
+            var result = await service.Create(dto);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.NotEqual(Guid.Empty, result.Id);
+            Assert.Equal("Martin", result.FirstName);
+            Assert.Equal("Rossakov", result.LastName);
+            Assert.Equal("Master", result.Qualifications);
+            Assert.Equal("null-name-test", result.UserID);
+
+            var saved = await service.DetailAsync(result.Id);
+
+            Assert.NotNull(saved);
+            Assert.Equal(result.Id, saved.Id);
+            Assert.Equal("Martin", saved.FirstName);
+        }
 
 
     }
