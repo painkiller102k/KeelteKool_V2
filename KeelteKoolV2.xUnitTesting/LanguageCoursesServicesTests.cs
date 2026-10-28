@@ -20,7 +20,7 @@ namespace KeelteKoolV2.xUnitTesting
             LecturerDTO dto = new LecturerDTO();
             dto.FirstName = "Test";
             dto.LastName = "Test";
-            dto.Qualifications = "Testicles";
+            dto.Qualifications = "Bachelor";
 
             // Act
             var result = await Svc<ILecturersServices>().Create(dto);
@@ -30,7 +30,7 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("Test", result.FirstName);
             Assert.Equal("Test", result.LastName);
-            Assert.Equal("Testicles", result.Qualifications);
+            Assert.Equal("Bachelor", result.Qualifications);
         }
 
         /// <summary>
@@ -375,6 +375,9 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("Bachelor", existing.Qualifications);
             Assert.Equal("original-user", existing.UserID);
         }
+
+
+
 
     }
 }
