@@ -413,5 +413,38 @@ namespace KeelteKoolV2.xUnitTesting
         }
 
 
+        /// <summary>
+        /// Kontrollib, et loodud õppejõu andmed säilivad andmebaasis.
+        /// </summary>
+        [Fact]
+        public async Task Should_SaveLecturerAndRetrieveItFromDatabase()
+        {
+            // Arrange
+            var service = Svc<ILecturersServices>();
+
+            var dto = new LecturerDTO
+            {
+                FirstName = "SavedTest",
+                LastName = "SavedLast",
+                Qualifications = "Bachelor",
+                UserID = "saved-test-user"
+            };
+
+            // Act
+            var created = await service.Create(dto);
+            var saved = await service.DetailAsync(created!.Id);
+
+            // Assert
+            Assert.NotNull(created);
+            Assert.NotEqual(Guid.Empty, created.Id);
+            Assert.NotNull(saved);
+            Assert.Equal(created.Id, saved.Id);
+            Assert.Equal("SavedTest", saved.FirstName);
+            Assert.Equal("SavedLast", saved.LastName);
+            Assert.Equal("Bachelor", saved.Qualifications);
+            Assert.Equal("saved-test-user", saved.UserID);
+        }
+
+
     }
 }
