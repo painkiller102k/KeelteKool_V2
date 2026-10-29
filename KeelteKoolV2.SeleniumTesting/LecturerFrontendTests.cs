@@ -296,6 +296,71 @@ namespace KeelteKoolV2.SeleniumTesting
         }
 
 
+        /// <summary>
+        /// Testib õppejõu kustutamise tühistamist ja kontrollib,
+        /// et õppejõud jääb pärast tühistamist nimekirja alles.
+        /// </summary>
+        [Fact]
+        public void Should_CancelLecturerDeletion_AndKeepLecturerInIndex()
+        {
+            /* Ülesseade */
+            IWebDriver driver = new FirefoxDriver();
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+
+            string uniqueId = Guid.NewGuid().ToString("N");
+            string firstName = $"Cancel{uniqueId}";
+            string lastName = "CancelDelete";
+            string qualifications = "Test Qualification";
+
+            try
+            {
+                driver.Navigate().GoToUrl("https://localhost:7191/");
+
+                /* Tegevus: loome õppejõu */
+                driver.FindElement(By.LinkText("Õppejõud")).Click();
+                driver.FindElement(By.LinkText("Add lecturer")).Click();
+
+                driver.FindElement(By.Name("FirstName")).SendKeys(firstName);
+                driver.FindElement(By.Name("LastName")).SendKeys(lastName);
+                driver.FindElement(By.Name("Qualifications")).SendKeys(qualifications);
+
+                driver.FindElement(
+                    By.CssSelector("form button[type='submit']")).Click();
+
+                /* Leiame loodud õppejõu */
+                var rows = driver.FindElements(By.CssSelector("table tbody tr"));
+
+                var createdRow = rows.FirstOrDefault(row =>
+                    row.Text.Contains(firstName) &&
+                    row.Text.Contains(lastName) &&
+                    row.Text.Contains(qualifications));
+
+                Assert.NotNull(createdRow);
+
+                /* Avame kustutamise lehe ja tühistame tegevuse */
+                createdRow!.FindElement(By.LinkText("Delete")).Click();
+                driver.FindElement(By.LinkText("Cancel")).Click();
+
+                /* Kontroll: õppejõud on endiselt nimekirjas */
+                var remainingRows = driver.FindElements(
+                    By.CssSelector("table tbody tr"));
+
+                bool lecturerStillExists = remainingRows.Any(row =>
+                    row.Text.Contains(firstName) &&
+                    row.Text.Contains(lastName) &&
+                    row.Text.Contains(qualifications));
+
+                Assert.True(
+                    lecturerStillExists,
+                    "Õppejõud kadus nimekirjast pärast kustutamise tühistamist.");
+            }
+            finally
+            {
+                driver.Quit();
+            }
+        }
+
+
 
     }
 }
