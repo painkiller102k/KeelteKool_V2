@@ -128,5 +128,101 @@ namespace KeelteKoolV2.SeleniumTesting
             }
         }
 
+
+        /// <summary>
+        /// Testib olemasoleva õppejõu andmete muutmist ja kontrollib,
+        /// et nimekirjas kuvatakse uuendatud andmed.
+        /// </summary>
+        [Fact]
+        public void Should_UpdateLecturer_AndDisplayUpdatedData()
+        {
+            /* Ülesseade */
+            IWebDriver driver = new FirefoxDriver();
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+
+            string uniqueId = Guid.NewGuid().ToString("N");
+            string firstName = $"Update{uniqueId}";
+            string lastName = "OldLecturer";
+            string qualifications = "Bachelor";
+
+            string updatedFirstName = $"Updated{uniqueId}";
+            string updatedLastName = "NewLecturer";
+            string updatedQualifications = "Master of Science";
+
+            try
+            {
+                driver.Navigate().GoToUrl("https://localhost:7191/");
+
+                /* Tegevus: loome õppejõu */
+                driver.FindElement(By.LinkText("Õppejõud")).Click();
+                driver.FindElement(By.LinkText("Add lecturer")).Click();
+
+                driver.FindElement(By.Name("FirstName")).SendKeys(firstName);
+                driver.FindElement(By.Name("LastName")).SendKeys(lastName);
+                driver.FindElement(By.Name("Qualifications")).SendKeys(qualifications);
+
+                driver.FindElement(
+                    By.CssSelector("form button[type='submit']")).Click();
+
+                /* Leiame loodud õppejõu */
+                var rows = driver.FindElements(By.CssSelector("table tbody tr"));
+
+                var createdRow = rows.FirstOrDefault(row =>
+                    row.Text.Contains(firstName) &&
+                    row.Text.Contains(lastName) &&
+                    row.Text.Contains(qualifications));
+
+                Assert.NotNull(createdRow);
+
+                /* Avame muutmise lehe */
+                createdRow!.FindElement(By.LinkText("Edit")).Click();
+
+                /* Muudame andmeid */
+                var firstNameInput = driver.FindElement(By.Name("FirstName"));
+                firstNameInput.Clear();
+                firstNameInput.SendKeys(updatedFirstName);
+
+                var lastNameInput = driver.FindElement(By.Name("LastName"));
+                lastNameInput.Clear();
+                lastNameInput.SendKeys(updatedLastName);
+
+                var qualificationsInput =
+                    driver.FindElement(By.Name("Qualifications"));
+                qualificationsInput.Clear();
+                qualificationsInput.SendKeys(updatedQualifications);
+
+                driver.FindElement(
+                    By.CssSelector("form button[type='submit']")).Click();
+
+                /* Kontroll: nimekirjas on uuendatud andmed */
+                var updatedRows = driver.FindElements(
+                    By.CssSelector("table tbody tr"));
+
+                bool lecturerWasUpdated = updatedRows.Any(row =>
+                    row.Text.Contains(updatedFirstName) &&
+                    row.Text.Contains(updatedLastName) &&
+                    row.Text.Contains(updatedQualifications));
+
+                Assert.True(
+                    lecturerWasUpdated,
+                    "Õppejõu uuendatud andmeid ei leitud nimekirjast.");
+
+                bool oldDataStillExists = updatedRows.Any(row =>
+                    row.Text.Contains(firstName) &&
+                    row.Text.Contains(lastName));
+
+                Assert.False(
+                    oldDataStillExists,
+                    "Nimekirjas kuvatakse endiselt õppejõu vanu andmeid.");
+            }
+            finally
+            {
+                driver.Quit();
+            }
+        }
+
+
+
+
     }
 }
