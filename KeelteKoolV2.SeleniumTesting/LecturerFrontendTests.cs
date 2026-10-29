@@ -361,6 +361,70 @@ namespace KeelteKoolV2.SeleniumTesting
         }
 
 
+        /// <summary>
+        /// Testib õppejõu muutmislehe avamist ja kontrollib,
+        /// et vormi väljad sisaldavad õppejõu praeguseid andmeid.
+        /// </summary>
+        [Fact]
+        public void Should_OpenLecturerEditPage_WithCorrectExistingData()
+        {
+            /* Ülesseade */
+            IWebDriver driver = new FirefoxDriver();
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+
+            string uniqueId = Guid.NewGuid().ToString("N");
+            string firstName = $"Edit{uniqueId}";
+            string lastName = "ExistingLecturer";
+            string qualifications = "Bachelor of Arts";
+
+            try
+            {
+                driver.Navigate().GoToUrl("https://localhost:7191/");
+
+                /* Tegevus: loome õppejõu */
+                driver.FindElement(By.LinkText("Õppejõud")).Click();
+                driver.FindElement(By.LinkText("Add lecturer")).Click();
+
+                driver.FindElement(By.Name("FirstName")).SendKeys(firstName);
+                driver.FindElement(By.Name("LastName")).SendKeys(lastName);
+                driver.FindElement(By.Name("Qualifications")).SendKeys(qualifications);
+
+                driver.FindElement(
+                    By.CssSelector("form button[type='submit']")).Click();
+
+                /* Leiame loodud õppejõu */
+                var rows = driver.FindElements(By.CssSelector("table tbody tr"));
+
+                var createdRow = rows.FirstOrDefault(row =>
+                    row.Text.Contains(firstName) &&
+                    row.Text.Contains(lastName) &&
+                    row.Text.Contains(qualifications));
+
+                Assert.NotNull(createdRow);
+
+                /* Avame muutmislehe */
+                createdRow!.FindElement(By.LinkText("Edit")).Click();
+
+                /* Kontroll: väljad sisaldavad olemasolevaid andmeid */
+                Assert.Equal(
+                    firstName,
+                    driver.FindElement(By.Name("FirstName")).GetAttribute("value"));
+
+                Assert.Equal(
+                    lastName,
+                    driver.FindElement(By.Name("LastName")).GetAttribute("value"));
+
+                Assert.Equal(
+                    qualifications,
+                    driver.FindElement(By.Name("Qualifications")).GetAttribute("value"));
+            }
+            finally
+            {
+                driver.Quit();
+            }
+        }
+
+
 
     }
 }
