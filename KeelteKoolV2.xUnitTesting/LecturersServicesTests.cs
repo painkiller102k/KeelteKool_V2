@@ -1,9 +1,5 @@
 ﻿using KeelteKoolV2.Core.DTO;
 using KeelteKoolV2.Core.ServiceInterface;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace KeelteKoolV2.xUnitTesting
@@ -16,16 +12,13 @@ namespace KeelteKoolV2.xUnitTesting
         [Fact]
         public async Task Should_AddNewLecturer_WhenResultISReturned()
         {
-            // Arrange
-            LecturerDTO dto = new LecturerDTO();
-            dto.FirstName = "Test";
-            dto.LastName = "Test";
-            dto.Qualifications = "Bachelor";
+            // ülesseade
+            LecturerDTO dto = MockLecturerDTOData();
 
-            // Act
+            // tegevus
             var result = await Svc<ILecturersServices>().Create(dto);
 
-            // Assert
+            // kontroll
             Assert.NotNull(result);
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("Test", result.FirstName);
@@ -39,19 +32,21 @@ namespace KeelteKoolV2.xUnitTesting
         [Fact]
         public async Task Should_GetLecturerDetails_WhenGuidISNotNull()
         {
-            // Arrange
-            LecturerDTO dto = new LecturerDTO();
-            dto.FirstName = "DetailTest";
-            dto.LastName = "DetailLast";
-            dto.Qualifications = "Master";
+            // ülesseade
+            LecturerDTO dto = new LecturerDTO
+            {
+                FirstName = "DetailTest",
+                LastName = "DetailLast",
+                Qualifications = "Master"
+            };
 
             var createdLecturer = await Svc<ILecturersServices>().Create(dto);
 
-            // Act
+            // tegevus
             var result = await Svc<ILecturersServices>()
-                .DetailAsync(createdLecturer.Id);
+                .DetailAsync(createdLecturer!.Id);
 
-            // Assert
+            // kontroll
             Assert.NotNull(result);
             Assert.Equal(createdLecturer.Id, result.Id);
             Assert.Equal("DetailTest", result.FirstName);
@@ -60,31 +55,34 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.NotEqual(Guid.Empty, result.Id);
         }
 
-
         /// <summary>
         /// Kontrollib, et õppejõu andmeid saab andmebaasis edukalt uuendada.
         /// </summary>
         [Fact]
         public async Task Should_UpdateLecturerWithNewData_WhenDataIsDifferentFromDB()
         {
-            // Arrange
-            LecturerDTO dto = new LecturerDTO();
-            dto.FirstName = "UpdateTest";
-            dto.LastName = "OldLastName";
-            dto.Qualifications = "Bachelor";
+            // ülesseade
+            LecturerDTO dto = new LecturerDTO
+            {
+                FirstName = "UpdateTest",
+                LastName = "OldLastName",
+                Qualifications = "Bachelor"
+            };
 
             var createdLecturer = await Svc<ILecturersServices>().Create(dto);
 
-            LecturerDTO updatedInfo = new LecturerDTO();
-            updatedInfo.Id = createdLecturer.Id;
-            updatedInfo.FirstName = "UpdatedFirstName";
-            updatedInfo.LastName = "UpdatedLastName";
-            updatedInfo.Qualifications = "Master";
+            LecturerDTO updatedInfo = new LecturerDTO
+            {
+                Id = createdLecturer!.Id,
+                FirstName = "UpdatedFirstName",
+                LastName = "UpdatedLastName",
+                Qualifications = "Master"
+            };
 
-            // Act
+            // tegevus
             var result = await Svc<ILecturersServices>().Update(updatedInfo);
 
-            // Assert
+            // kontroll
             Assert.NotNull(result);
             Assert.Equal(createdLecturer.Id, result.Id);
             Assert.Equal("UpdatedFirstName", result.FirstName);
@@ -93,29 +91,30 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.NotEqual("OldLastName", result.LastName);
         }
 
-
         /// <summary>
         /// Kontrollib, et õppejõud kustutatakse andmebaasist õige ID alusel.
         /// </summary>
         [Fact]
         public async Task Should_DeleteLecturer_WhenValidIDIsGiven()
         {
-            // Arrange
-            LecturerDTO dto = new LecturerDTO();
-            dto.FirstName = "DeleteTest";
-            dto.LastName = "DeleteLast";
-            dto.Qualifications = "Bachelor";
+            // ülesseade
+            LecturerDTO dto = new LecturerDTO
+            {
+                FirstName = "DeleteTest",
+                LastName = "DeleteLast",
+                Qualifications = "Bachelor"
+            };
 
             var createdLecturer = await Svc<ILecturersServices>().Create(dto);
 
-            // Act
+            // tegevus
             var result = await Svc<ILecturersServices>()
-                .Delete(createdLecturer.Id);
+                .Delete(createdLecturer!.Id);
 
             var deletedLecturer = await Svc<ILecturersServices>()
                 .DetailAsync(createdLecturer.Id);
 
-            // Assert
+            // kontroll
             Assert.NotNull(result);
             Assert.Equal(createdLecturer.Id, result.Id);
             Assert.Equal("DeleteTest", result.FirstName);
@@ -124,30 +123,31 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Null(deletedLecturer);
         }
 
-
         /// <summary>
         /// Kontrollib, et olematu ID korral ei leita andmebaasist õppejõudu.
         /// </summary>
         [Fact]
         public async Task Should_ReturnNull_WhenLecturerDoesNotExist()
         {
-            // Arrange
-            LecturerDTO dto = new LecturerDTO();
-            dto.FirstName = "ExistingTest";
-            dto.LastName = "ExistingLast";
-            dto.Qualifications = "Bachelor";
+            // ülesseade
+            LecturerDTO dto = new LecturerDTO
+            {
+                FirstName = "ExistingTest",
+                LastName = "ExistingLast",
+                Qualifications = "Bachelor"
+            };
 
             var existingLecturer = await Svc<ILecturersServices>().Create(dto);
             Guid nonExistingId = Guid.NewGuid();
 
-            // Act
+            // tegevus
             var result = await Svc<ILecturersServices>()
                 .DetailAsync(nonExistingId);
 
             var existingResult = await Svc<ILecturersServices>()
-                .DetailAsync(existingLecturer.Id);
+                .DetailAsync(existingLecturer!.Id);
 
-            // Assert
+            // kontroll
             Assert.Null(result);
             Assert.NotNull(existingResult);
             Assert.Equal(existingLecturer.Id, existingResult.Id);
@@ -155,30 +155,31 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("ExistingLast", existingResult.LastName);
         }
 
-
         /// <summary>
         /// Kontrollib, et olematu ID korral ei kustutata ühtegi õppejõudu.
         /// </summary>
         [Fact]
         public async Task Should_ReturnNull_WhenDeletingNonExistingLecturer()
         {
-            // Arrange
-            LecturerDTO dto = new LecturerDTO();
-            dto.FirstName = "DeleteExistingTest";
-            dto.LastName = "DeleteExistingLast";
-            dto.Qualifications = "Master";
+            // ülesseade
+            LecturerDTO dto = new LecturerDTO
+            {
+                FirstName = "DeleteExistingTest",
+                LastName = "DeleteExistingLast",
+                Qualifications = "Master"
+            };
 
             var existingLecturer = await Svc<ILecturersServices>().Create(dto);
             Guid nonExistingId = Guid.NewGuid();
 
-            // Act
+            // tegevus
             var result = await Svc<ILecturersServices>()
                 .Delete(nonExistingId);
 
             var existingResult = await Svc<ILecturersServices>()
-                .DetailAsync(existingLecturer.Id);
+                .DetailAsync(existingLecturer!.Id);
 
-            // Assert
+            // kontroll
             Assert.Null(result);
             Assert.NotNull(existingResult);
             Assert.Equal(existingLecturer.Id, existingResult.Id);
@@ -186,34 +187,37 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("DeleteExistingLast", existingResult.LastName);
         }
 
-
         /// <summary>
         /// Kontrollib, et olematu ID-ga õppejõu uuendamisel tagastatakse null.
         /// </summary>
         [Fact]
         public async Task Should_ReturnNull_WhenUpdatingNonExistingLecturer()
         {
-            // Arrange
-            LecturerDTO existingDto = new LecturerDTO();
-            existingDto.FirstName = "UpdateExistingTest";
-            existingDto.LastName = "UpdateExistingLast";
-            existingDto.Qualifications = "Bachelor";
+            // ülesseade
+            LecturerDTO existingDto = new LecturerDTO
+            {
+                FirstName = "UpdateExistingTest",
+                LastName = "UpdateExistingLast",
+                Qualifications = "Bachelor"
+            };
 
             var existingLecturer = await Svc<ILecturersServices>().Create(existingDto);
 
-            LecturerDTO updateDto = new LecturerDTO();
-            updateDto.Id = Guid.NewGuid();
-            updateDto.FirstName = "ChangedName";
-            updateDto.LastName = "ChangedLast";
-            updateDto.Qualifications = "Master";
+            LecturerDTO updateDto = new LecturerDTO
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "ChangedName",
+                LastName = "ChangedLast",
+                Qualifications = "Master"
+            };
 
-            // Act
+            // tegevus
             var result = await Svc<ILecturersServices>().Update(updateDto);
 
             var existingResult = await Svc<ILecturersServices>()
-                .DetailAsync(existingLecturer.Id);
+                .DetailAsync(existingLecturer!.Id);
 
-            // Assert
+            // kontroll
             Assert.Null(result);
             Assert.NotNull(existingResult);
             Assert.Equal(existingLecturer.Id, existingResult.Id);
@@ -222,7 +226,6 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("Bachelor", existingResult.Qualifications);
         }
 
-
         /// <summary>
         /// Kontrollib, et null väärtusega DTO korral ei looda uut õppejõudu
         /// ega muudeta olemasolevaid andmeid.
@@ -230,7 +233,7 @@ namespace KeelteKoolV2.xUnitTesting
         [Fact]
         public async Task Should_ReturnNull_WhenCreatingWithNullDto()
         {
-            // Arrange
+            // ülesseade
             var service = Svc<ILecturersServices>();
 
             var lecturer = await service.Create(new LecturerDTO
@@ -240,11 +243,11 @@ namespace KeelteKoolV2.xUnitTesting
                 Qualifications = "Master"
             });
 
-            // Act
+            // tegevus
             var result = await service.Create(null!);
-            var existingLecturer = await service.DetailAsync(lecturer.Id);
+            var existingLecturer = await service.DetailAsync(lecturer!.Id);
 
-            // Assert
+            // kontroll
             Assert.Null(result);
             Assert.NotNull(existingLecturer);
             Assert.Equal(lecturer.Id, existingLecturer.Id);
@@ -253,14 +256,13 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("Master", existingLecturer.Qualifications);
         }
 
-
         /// <summary>
         /// Kontrollib, et tühja GUID väärtuse korral õppejõudu ei leita.
         /// </summary>
         [Fact]
         public async Task Should_ReturnNull_WhenSearchingWithEmptyGuid()
         {
-            // Arrange
+            // ülesseade
             var service = Svc<ILecturersServices>();
 
             var lecturer = await service.Create(new LecturerDTO
@@ -270,11 +272,11 @@ namespace KeelteKoolV2.xUnitTesting
                 Qualifications = "Master"
             });
 
-            // Act
+            // tegevus
             var result = await service.DetailAsync(Guid.Empty);
-            var existingLecturer = await service.DetailAsync(lecturer.Id);
+            var existingLecturer = await service.DetailAsync(lecturer!.Id);
 
-            // Assert
+            // kontroll
             Assert.Null(result);
             Assert.NotNull(existingLecturer);
             Assert.Equal(lecturer.Id, existingLecturer.Id);
@@ -283,27 +285,26 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("Master", existingLecturer.Qualifications);
         }
 
-
         /// <summary>
         /// Kontrollib, et tühjad ees- ja perekonnanimed asendatakse vaikeväärtustega.
         /// </summary>
         [Fact]
         public async Task Should_UseDefaultNames_WhenFirstNameAndLastNameAreEmpty()
         {
-            // Arrange
+            // ülesseade
             var service = Svc<ILecturersServices>();
 
-            var dto = new LecturerDTO
+            LecturerDTO dto = new LecturerDTO
             {
                 FirstName = "",
                 LastName = "",
                 Qualifications = "Master"
             };
 
-            // Act
+            // tegevus
             var result = await service.Create(dto);
 
-            // Assert
+            // kontroll
             Assert.NotNull(result);
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("Martin", result.FirstName);
@@ -311,18 +312,17 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("Master", result.Qualifications);
         }
 
-
         /// <summary>
         /// Kontrollib, et õppejõu loomisel salvestatakse kasutaja ID ja kuupäevad.
         /// </summary>
         [Fact]
         public async Task Should_SaveUserIdAndDates_WhenCreatingLecturer()
         {
-            // Arrange
+            // ülesseade
             var userId = "test-user-123";
             var beforeCreate = DateTime.Now;
 
-            var dto = new LecturerDTO
+            LecturerDTO dto = new LecturerDTO
             {
                 FirstName = "DateTest",
                 LastName = "Lecturer",
@@ -330,11 +330,11 @@ namespace KeelteKoolV2.xUnitTesting
                 UserID = userId
             };
 
-            // Act
+            // tegevus
             var result = await Svc<ILecturersServices>().Create(dto);
             var afterCreate = DateTime.Now;
 
-            // Assert
+            // kontroll
             Assert.NotNull(result);
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal(userId, result.UserID);
@@ -344,14 +344,13 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.True(result.ModifiedAt <= afterCreate);
         }
 
-
         /// <summary>
         /// Kontrollib, et null väärtusega DTO korral ei uuendata õppejõu andmeid.
         /// </summary>
         [Fact]
         public async Task Should_ReturnNull_WhenUpdatingWithNullDto()
         {
-            // Arrange
+            // ülesseade
             var service = Svc<ILecturersServices>();
 
             var lecturer = await service.Create(new LecturerDTO
@@ -362,11 +361,11 @@ namespace KeelteKoolV2.xUnitTesting
                 UserID = "original-user"
             });
 
-            // Act
+            // tegevus
             var result = await service.Update(null!);
-            var existing = await service.DetailAsync(lecturer.Id);
+            var existing = await service.DetailAsync(lecturer!.Id);
 
-            // Assert
+            // kontroll
             Assert.Null(result);
             Assert.NotNull(existing);
             Assert.Equal(lecturer.Id, existing.Id);
@@ -383,10 +382,10 @@ namespace KeelteKoolV2.xUnitTesting
         [Fact]
         public async Task Should_UseDefaultNames_WhenFirstNameAndLastNameAreNull()
         {
-            // Arrange
+            // ülesseade
             var service = Svc<ILecturersServices>();
 
-            var dto = new LecturerDTO
+            LecturerDTO dto = new LecturerDTO
             {
                 FirstName = null!,
                 LastName = null!,
@@ -394,10 +393,10 @@ namespace KeelteKoolV2.xUnitTesting
                 UserID = "null-name-test"
             };
 
-            // Act
+            // tegevus
             var result = await service.Create(dto);
 
-            // Assert
+            // kontroll
             Assert.NotNull(result);
             Assert.NotEqual(Guid.Empty, result.Id);
             Assert.Equal("Martin", result.FirstName);
@@ -412,39 +411,31 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("Martin", saved.FirstName);
         }
 
-
         /// <summary>
         /// Kontrollib, et loodud õppejõu andmed säilivad andmebaasis.
         /// </summary>
         [Fact]
         public async Task Should_SaveLecturerAndRetrieveItFromDatabase()
         {
-            // Arrange
+            // ülesseade
             var service = Svc<ILecturersServices>();
+            LecturerDTO dto = MockLecturerDTOData();
+            dto.UserID = "saved-test-user";
 
-            var dto = new LecturerDTO
-            {
-                FirstName = "SavedTest",
-                LastName = "SavedLast",
-                Qualifications = "Bachelor",
-                UserID = "saved-test-user"
-            };
-
-            // Act
+            // tegevus
             var created = await service.Create(dto);
             var saved = await service.DetailAsync(created!.Id);
 
-            // Assert
+            // kontroll
             Assert.NotNull(created);
             Assert.NotEqual(Guid.Empty, created.Id);
             Assert.NotNull(saved);
             Assert.Equal(created.Id, saved.Id);
-            Assert.Equal("SavedTest", saved.FirstName);
-            Assert.Equal("SavedLast", saved.LastName);
+            Assert.Equal("Test", saved.FirstName);
+            Assert.Equal("Test", saved.LastName);
             Assert.Equal("Bachelor", saved.Qualifications);
             Assert.Equal("saved-test-user", saved.UserID);
         }
-
 
         /// <summary>
         /// Kontrollib, et õppejõu uuendatud andmed säilivad andmebaasis.
@@ -452,10 +443,9 @@ namespace KeelteKoolV2.xUnitTesting
         [Fact]
         public async Task Should_SaveUpdatedLecturerAndRetrieveItFromDatabase()
         {
-            // Arrange
+            // ülesseade
             var service = Svc<ILecturersServices>();
-
-            var dto = new LecturerDTO
+            LecturerDTO dto = new LecturerDTO
             {
                 FirstName = "BeforeUpdate",
                 LastName = "OldLastName",
@@ -464,7 +454,7 @@ namespace KeelteKoolV2.xUnitTesting
 
             var created = await service.Create(dto);
 
-            var updateDto = new LecturerDTO
+            LecturerDTO updateDto = new LecturerDTO
             {
                 Id = created!.Id,
                 FirstName = "AfterUpdate",
@@ -472,11 +462,11 @@ namespace KeelteKoolV2.xUnitTesting
                 Qualifications = "Master"
             };
 
-            // Act
+            // tegevus
             var updated = await service.Update(updateDto);
             var saved = await service.DetailAsync(created.Id);
 
-            // Assert
+            // kontroll
             Assert.NotNull(updated);
             Assert.Equal(created.Id, updated.Id);
             Assert.Equal("AfterUpdate", updated.FirstName);
@@ -488,7 +478,17 @@ namespace KeelteKoolV2.xUnitTesting
             Assert.Equal("Master", saved.Qualifications);
         }
 
-
-
+        /// <summary>
+        /// Loob testimiseks õppejõu DTO näidisandmed.
+        /// </summary>
+        private static LecturerDTO MockLecturerDTOData()
+        {
+            return new LecturerDTO
+            {
+                FirstName = "Test",
+                LastName = "Test",
+                Qualifications = "Bachelor"
+            };
+        }
     }
 }
