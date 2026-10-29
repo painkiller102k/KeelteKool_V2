@@ -221,6 +221,79 @@ namespace KeelteKoolV2.SeleniumTesting
             }
         }
 
+        /// <summary>
+        /// Testib õppejõu kustutamist ja kontrollib,
+        /// et kustutatud õppejõudu ei kuvata enam nimekirjas.
+        /// </summary>
+        [Fact]
+        public void Should_DeleteLecturer_AndRemoveItFromIndex()
+        {
+            /* Ülesseade */
+            IWebDriver driver = new FirefoxDriver();
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+
+            string uniqueId = Guid.NewGuid().ToString("N");
+            string firstName = $"Delete{uniqueId}";
+            string lastName = "DeleteLecturer";
+            string qualifications = "Test Qualification";
+
+            try
+            {
+                driver.Navigate().GoToUrl("https://localhost:7191/");
+
+                /* Tegevus: loome õppejõu */
+                driver.FindElement(By.LinkText("Õppejõud")).Click();
+                driver.FindElement(By.LinkText("Add lecturer")).Click();
+
+                driver.FindElement(By.Name("FirstName")).SendKeys(firstName);
+                driver.FindElement(By.Name("LastName")).SendKeys(lastName);
+                driver.FindElement(By.Name("Qualifications")).SendKeys(qualifications);
+
+                driver.FindElement(
+                    By.CssSelector("form button[type='submit']")).Click();
+
+                /* Leiame loodud õppejõu */
+                var rows = driver.FindElements(By.CssSelector("table tbody tr"));
+
+                var createdRow = rows.FirstOrDefault(row =>
+                    row.Text.Contains(firstName) &&
+                    row.Text.Contains(lastName) &&
+                    row.Text.Contains(qualifications));
+
+                Assert.NotNull(createdRow);
+
+                /* Avame kustutamise lehe */
+                createdRow!.FindElement(By.LinkText("Delete")).Click();
+
+                /* Kontrollime, et kustutamise lehel on õige õppejõud */
+                string deletePageText =
+                    driver.FindElement(By.TagName("body")).Text;
+
+                Assert.Contains(firstName, deletePageText);
+                Assert.Contains(lastName, deletePageText);
+
+                /* Kinnitame kustutamise */
+                driver.FindElement(
+                    By.CssSelector("form button[type='submit']")).Click();
+
+                /* Kontroll: õppejõudu ei ole enam nimekirjas */
+                var remainingRows = driver.FindElements(
+                    By.CssSelector("table tbody tr"));
+
+                bool lecturerStillExists = remainingRows.Any(row =>
+                    row.Text.Contains(firstName) &&
+                    row.Text.Contains(lastName) &&
+                    row.Text.Contains(qualifications));
+
+                Assert.False(
+                    lecturerStillExists,
+                    "Kustutatud õppejõud kuvatakse endiselt nimekirjas.");
+            }
+            finally
+            {
+                driver.Quit();
+            }
+        }
 
 
 
