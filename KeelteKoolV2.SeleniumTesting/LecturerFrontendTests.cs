@@ -425,6 +425,42 @@ namespace KeelteKoolV2.SeleniumTesting
         }
 
 
+        /// <summary>
+        /// Kontrollib, et õppejõudude nimekirjas kuvatakse kõik vajalikud tabeli veerud.
+        /// </summary>
+        [Fact]
+        public void Should_DisplayAllExpectedColumns_InLecturerList()
+        {
+            /* Ülesseade */
+            IWebDriver driver = new FirefoxDriver();
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+
+            try
+            {
+                /* Tegevus: avame õppejõudude nimekirja */
+                driver.Navigate().GoToUrl("https://localhost:7191/");
+                driver.FindElement(By.LinkText("Õppejõud")).Click();
+
+                /* Leiame tabeli päised */
+                var headers = driver
+                    .FindElements(By.CssSelector("table thead th"))
+                    .Select(header => header.Text.Trim())
+                    .ToList();
+
+                /* Kontroll: kõik vajalikud veerud on olemas */
+                Assert.Contains("First name", headers);
+                Assert.Contains("Last name", headers);
+                Assert.Contains("Qualifications", headers);
+                Assert.Contains("Created at", headers);
+                Assert.Contains("Modified at", headers);
+                Assert.Contains("Actions", headers);
+            }
+            finally
+            {
+                driver.Quit();
+            }
+        }
+
 
     }
 }
