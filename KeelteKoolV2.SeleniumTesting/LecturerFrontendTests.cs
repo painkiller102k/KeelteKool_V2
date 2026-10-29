@@ -462,5 +462,32 @@ namespace KeelteKoolV2.SeleniumTesting
         }
 
 
+        /// <summary>
+        /// Kontrollib, et õppejõu loomise vormis kuvatakse kõik vajalikud väljad.
+        /// </summary>
+        [Fact]
+        public void Should_DisplayAllFields_OnCreateLecturerPage()
+        {
+            /* Ülesseade */
+            IWebDriver driver = new FirefoxDriver();
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5);
+
+            try
+            {
+                /* Avame õppejõu loomise lehe */
+                driver.Navigate().GoToUrl("https://localhost:7191/");
+                driver.FindElement(By.LinkText("Õppejõud")).Click();
+                driver.FindElement(By.LinkText("Add lecturer")).Click();
+
+                /* Kontrollime vormi välju */
+                Assert.True(driver.FindElement(By.Name("FirstName")).Displayed);
+                Assert.True(driver.FindElement(By.Name("LastName")).Displayed);
+                Assert.True(driver.FindElement(By.Name("Qualifications")).Displayed);
+            }
+            finally
+            {
+                driver.Quit();
+            }
+        }
     }
 }
