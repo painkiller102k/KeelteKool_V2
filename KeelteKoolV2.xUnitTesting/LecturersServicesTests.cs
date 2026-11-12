@@ -1,4 +1,4 @@
-﻿using KeelteKoolV2.Core.Domain;
+using KeelteKoolV2.Core.Domain;
 using KeelteKoolV2.Core.DTO;
 using KeelteKoolV2.Core.ServiceInterface;
 using KeelteKoolV2.Data;
