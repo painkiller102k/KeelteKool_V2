@@ -1,493 +1,386 @@
-﻿using KeelteKoolV2.Core.DTO;
+﻿using KeelteKoolV2.Core.Domain;
+using KeelteKoolV2.Core.DTO;
 using KeelteKoolV2.Core.ServiceInterface;
+using KeelteKoolV2.Data;
 using Xunit;
 
 namespace KeelteKoolV2.xUnitTesting
 {
     public class LecturersServicesTests : TestBase
     {
+        // PÕHITESTID (LanguageCourse eeskujul)
+
         /// <summary>
-        /// Kontrollib, et uue õppejõu loomisel salvestatakse tema andmed õigesti.
+        /// Kontrollib, et uue õppejõu lisamisel tagastatakse objekt,
+        /// millel on uus ID ning samad andmed, mis sisestati.
         /// </summary>
         [Fact]
-        public async Task Should_AddNewLecturer_WhenResultISReturned()
+        public async Task Should_AddNewLecturer_WhenResultIsReturned()
         {
-            // ülesseade
-            LecturerDTO dto = MockLecturerDTOData();
+            //ülesseade
+            LecturerDTO newLecturerDTO = new LecturerDTO();
+            newLecturerDTO.FirstName = "Mari";
+            newLecturerDTO.LastName = "Maasikas";
+            newLecturerDTO.Qualifications = "Magistrikraad";
+            newLecturerDTO.UserID = "test-user";
 
-            // tegevus
-            var result = await Svc<ILecturersServices>().Create(dto);
+            //tegevus
+            var result = await Svc<ILecturersServices>().Create(newLecturerDTO);
 
-            // kontroll
-            Assert.NotNull(result);
-            Assert.NotEqual(Guid.Empty, result.Id);
+            //kontroll
+            Assert.NotNull(result); //teenus tagastas objekti
+            Assert.NotEqual(Guid.Empty, result.Id); //teenus genereeris uue id
+            Assert.Equal(newLecturerDTO.FirstName, result.FirstName); //andmed ei kadunud vahepeal ära
+            Assert.Equal(newLecturerDTO.LastName, result.LastName);
+            Assert.Equal(newLecturerDTO.Qualifications, result.Qualifications);
+            Assert.Equal(newLecturerDTO.UserID, result.UserID);
+        }
+
+        /// <summary>
+        /// Negatiivne test: kontrollib, et tühja ees- ja perekonnanimega
+        /// õppejõudu andmebaasi ei lisata.
+        /// </summary>
+        [Fact]
+        public async Task ShouldNot_AddNewLecturer_WhenFieldsEmpty()
+        {
+            //ülesseade
+            LecturerDTO newLecturer = MockLecturerDTOData();
+            newLecturer.FirstName = string.Empty;
+            newLecturer.LastName = string.Empty;
+
+            //tegevus
+            var result = await Svc<ILecturersServices>().Create(newLecturer);
+
+            //kontroll
+            Assert.Null(result); //teenus lükkas objekti lisamise tagasi
+            Assert.Empty(Svc<KeelteKoolV2Context>().Lecturers); //andmebaasi ei lisatud midagi
+            //teenus ei muutnud sisendandmeid ega pannud neile vaikeväärtusi
+            Assert.Equal(string.Empty, newLecturer.FirstName);
+            Assert.Equal(string.Empty, newLecturer.LastName);
+            Assert.Equal("Bakalaureusekraad", newLecturer.Qualifications);
+        }
+
+        /// <summary>
+        /// Kontrollib, et andmebaasi lisatud õppejõud leitakse
+        /// DetailAsync meetodiga tema ID järgi üles.
+        /// </summary>
+        [Fact]
+        public async Task Should_ReturnLecturerDetails_WhenGuidIsNotNull()
+        {
+            //ülesseade
+            Lecturer createdLecturer = await AddObjectToDB();
+
+            //tegevus
+            //kasutame objektis asuvat id et see objekt tagasi lugeda andmebaasist DetailAsync meetodiga
+            var result = await Svc<ILecturersServices>().DetailAsync(createdLecturer.Id);
+
+            //kontroll
+            Assert.NotNull(result); //tagastati midagi
+            Assert.Equal(createdLecturer.Id, result.Id); //tagastati sama id-ga objekt
+            Assert.Equal(createdLecturer, result); //objekt on sama, mis andmebaasi lisati
             Assert.Equal("Test", result.FirstName);
-            Assert.Equal("Test", result.LastName);
-            Assert.Equal("Bachelor", result.Qualifications);
+            Assert.Equal("Õppejõud", result.LastName);
+            Assert.Equal("Bakalaureusekraad", result.Qualifications);
         }
 
         /// <summary>
-        /// Kontrollib, et õppejõu andmed leitakse andmebaasist õige ID alusel.
-        /// </summary>
-        [Fact]
-        public async Task Should_GetLecturerDetails_WhenGuidISNotNull()
-        {
-            // ülesseade
-            LecturerDTO dto = new LecturerDTO
-            {
-                FirstName = "DetailTest",
-                LastName = "DetailLast",
-                Qualifications = "Master"
-            };
-
-            var createdLecturer = await Svc<ILecturersServices>().Create(dto);
-
-            // tegevus
-            var result = await Svc<ILecturersServices>()
-                .DetailAsync(createdLecturer!.Id);
-
-            // kontroll
-            Assert.NotNull(result);
-            Assert.Equal(createdLecturer.Id, result.Id);
-            Assert.Equal("DetailTest", result.FirstName);
-            Assert.Equal("DetailLast", result.LastName);
-            Assert.Equal("Master", result.Qualifications);
-            Assert.NotEqual(Guid.Empty, result.Id);
-        }
-
-        /// <summary>
-        /// Kontrollib, et õppejõu andmeid saab andmebaasis edukalt uuendada.
+        /// Kontrollib, et õppejõu andmete muutmisel salvestatakse uued andmed,
+        /// loomise aeg jääb samaks ja muutmise aeg uueneb.
         /// </summary>
         [Fact]
         public async Task Should_UpdateLecturerWithNewData_WhenDataIsDifferentFromDB()
         {
-            // ülesseade
-            LecturerDTO dto = new LecturerDTO
-            {
-                FirstName = "UpdateTest",
-                LastName = "OldLastName",
-                Qualifications = "Bachelor"
-            };
+            //ülesseade
+            Lecturer createdLecturer = await AddObjectToDB();
+            //jätame vanad väärtused meelde, sest teenus muudab sama objekti
+            DateTime oldCreatedAt = createdLecturer.CreatedAt;
+            DateTime oldModifiedAt = createdLecturer.ModifiedAt;
 
-            var createdLecturer = await Svc<ILecturersServices>().Create(dto);
+            var dto = new LecturerDTO();
+            dto.Id = createdLecturer.Id;
+            dto.FirstName = "Jaan";
+            dto.LastName = "Tamm";
+            dto.Qualifications = "Doktorikraad";
+            dto.UserID = createdLecturer.UserID;
 
-            LecturerDTO updatedInfo = new LecturerDTO
-            {
-                Id = createdLecturer!.Id,
-                FirstName = "UpdatedFirstName",
-                LastName = "UpdatedLastName",
-                Qualifications = "Master"
-            };
+            //tegevus
+            var result = await Svc<ILecturersServices>().Update(dto);
 
-            // tegevus
-            var result = await Svc<ILecturersServices>().Update(updatedInfo);
-
-            // kontroll
+            //kontroll
             Assert.NotNull(result);
-            Assert.Equal(createdLecturer.Id, result.Id);
-            Assert.Equal("UpdatedFirstName", result.FirstName);
-            Assert.Equal("UpdatedLastName", result.LastName);
-            Assert.Equal("Master", result.Qualifications);
-            Assert.NotEqual("OldLastName", result.LastName);
+            Assert.Equal(dto.Id, result.Id); //uuendati sama objekti
+            Assert.Equal(dto.FirstName, result.FirstName); //uued andmed on salvestatud
+            Assert.Equal(dto.LastName, result.LastName);
+            Assert.Matches(dto.Qualifications, result.Qualifications);
+            Assert.Equal(oldCreatedAt, result.CreatedAt); //loomise aeg ei muutunud
+            Assert.True(result.ModifiedAt >= oldModifiedAt); //muutmise aeg uuenes
         }
 
         /// <summary>
-        /// Kontrollib, et õppejõud kustutatakse andmebaasist õige ID alusel.
+        /// Kontrollib, et õige ID korral õppejõud kustutatakse
+        /// ja teda ei leita enam andmebaasist.
         /// </summary>
         [Fact]
-        public async Task Should_DeleteLecturer_WhenValidIDIsGiven()
+        public async Task Should_DeleteDataFromDB_WhenValidIDIsGiven()
         {
-            // ülesseade
-            LecturerDTO dto = new LecturerDTO
-            {
-                FirstName = "DeleteTest",
-                LastName = "DeleteLast",
-                Qualifications = "Bachelor"
-            };
+            //ülesseade
+            Lecturer createdLecturer = await AddObjectToDB();
 
-            var createdLecturer = await Svc<ILecturersServices>().Create(dto);
+            //tegevus
+            var deletedLecturer = await Svc<ILecturersServices>().Delete(createdLecturer.Id);
+            var result = await Svc<ILecturersServices>().DetailAsync(createdLecturer.Id);
 
-            // tegevus
-            var result = await Svc<ILecturersServices>()
-                .Delete(createdLecturer!.Id);
-
-            var deletedLecturer = await Svc<ILecturersServices>()
-                .DetailAsync(createdLecturer.Id);
-
-            // kontroll
-            Assert.NotNull(result);
-            Assert.Equal(createdLecturer.Id, result.Id);
-            Assert.Equal("DeleteTest", result.FirstName);
-            Assert.Equal("DeleteLast", result.LastName);
-            Assert.Equal("Bachelor", result.Qualifications);
-            Assert.Null(deletedLecturer);
+            //kontroll
+            Assert.Null(result); //objekti ei leita enam üles
+            Assert.NotNull(deletedLecturer); //teenus tagastas kustutatud objekti
+            Assert.Equal(createdLecturer, deletedLecturer); //kustutati just see objekt
+            Assert.Equal(createdLecturer.Id, deletedLecturer.Id);
+            Assert.NotEqual(deletedLecturer, result);
+            Assert.Empty(Svc<KeelteKoolV2Context>().Lecturers); //andmebaas on tühi
         }
 
+        // OMAD TESTID
+
         /// <summary>
-        /// Kontrollib, et olematu ID korral ei leita andmebaasist õppejõudu.
+        /// Negatiivne test: kontrollib, et olematu ID korral õppejõudu ei leita,
+        /// kuid olemasolev õppejõud leitakse endiselt.
         /// </summary>
         [Fact]
-        public async Task Should_ReturnNull_WhenLecturerDoesNotExist()
+        public async Task ShouldNot_ReturnLecturer_WhenIdDoesNotExist()
         {
-            // ülesseade
-            LecturerDTO dto = new LecturerDTO
-            {
-                FirstName = "ExistingTest",
-                LastName = "ExistingLast",
-                Qualifications = "Bachelor"
-            };
-
-            var existingLecturer = await Svc<ILecturersServices>().Create(dto);
+            //ülesseade
+            Lecturer existingLecturer = await AddObjectToDB();
             Guid nonExistingId = Guid.NewGuid();
 
-            // tegevus
-            var result = await Svc<ILecturersServices>()
-                .DetailAsync(nonExistingId);
+            //tegevus
+            var result = await Svc<ILecturersServices>().DetailAsync(nonExistingId);
+            var existingResult = await Svc<ILecturersServices>().DetailAsync(existingLecturer.Id);
 
-            var existingResult = await Svc<ILecturersServices>()
-                .DetailAsync(existingLecturer!.Id);
-
-            // kontroll
-            Assert.Null(result);
-            Assert.NotNull(existingResult);
+            //kontroll
+            Assert.Null(result); //olematut objekti ei leitud
+            Assert.NotEqual(existingLecturer.Id, nonExistingId);
+            Assert.NotNull(existingResult); //olemasolev objekt on alles
             Assert.Equal(existingLecturer.Id, existingResult.Id);
-            Assert.Equal("ExistingTest", existingResult.FirstName);
-            Assert.Equal("ExistingLast", existingResult.LastName);
+            Assert.Equal("Test", existingResult.FirstName);
         }
 
         /// <summary>
-        /// Kontrollib, et olematu ID korral ei kustutata ühtegi õppejõudu.
+        /// Negatiivne test: kontrollib, et olematu ID korral ei kustutata
+        /// ühtegi õppejõudu ja olemasolevad andmed jäävad alles.
         /// </summary>
         [Fact]
-        public async Task Should_ReturnNull_WhenDeletingNonExistingLecturer()
+        public async Task ShouldNot_DeleteAnyLecturer_WhenIdDoesNotExist()
         {
-            // ülesseade
+            //ülesseade
+            Lecturer existingLecturer = await AddObjectToDB();
+
+            //tegevus
+            var result = await Svc<ILecturersServices>().Delete(Guid.NewGuid());
+            var existingResult = await Svc<ILecturersServices>().DetailAsync(existingLecturer.Id);
+
+            //kontroll
+            Assert.Null(result); //midagi ei kustutatud
+            Assert.Single(Svc<KeelteKoolV2Context>().Lecturers); //andmebaasis on endiselt 1 õppejõud
+            Assert.NotNull(existingResult);
+            Assert.Equal(existingLecturer.Id, existingResult.Id);
+            Assert.Equal("Õppejõud", existingResult.LastName);
+        }
+
+        /// <summary>
+        /// Negatiivne test: kontrollib, et olematu ID-ga õppejõu uuendamisel
+        /// tagastatakse null ja olemasoleva õppejõu andmed ei muutu.
+        /// </summary>
+        [Fact]
+        public async Task ShouldNot_UpdateLecturer_WhenIdDoesNotExist()
+        {
+            //ülesseade
+            Lecturer existingLecturer = await AddObjectToDB();
             LecturerDTO dto = new LecturerDTO
-            {
-                FirstName = "DeleteExistingTest",
-                LastName = "DeleteExistingLast",
-                Qualifications = "Master"
-            };
-
-            var existingLecturer = await Svc<ILecturersServices>().Create(dto);
-            Guid nonExistingId = Guid.NewGuid();
-
-            // tegevus
-            var result = await Svc<ILecturersServices>()
-                .Delete(nonExistingId);
-
-            var existingResult = await Svc<ILecturersServices>()
-                .DetailAsync(existingLecturer!.Id);
-
-            // kontroll
-            Assert.Null(result);
-            Assert.NotNull(existingResult);
-            Assert.Equal(existingLecturer.Id, existingResult.Id);
-            Assert.Equal("DeleteExistingTest", existingResult.FirstName);
-            Assert.Equal("DeleteExistingLast", existingResult.LastName);
-        }
-
-        /// <summary>
-        /// Kontrollib, et olematu ID-ga õppejõu uuendamisel tagastatakse null.
-        /// </summary>
-        [Fact]
-        public async Task Should_ReturnNull_WhenUpdatingNonExistingLecturer()
-        {
-            // ülesseade
-            LecturerDTO existingDto = new LecturerDTO
-            {
-                FirstName = "UpdateExistingTest",
-                LastName = "UpdateExistingLast",
-                Qualifications = "Bachelor"
-            };
-
-            var existingLecturer = await Svc<ILecturersServices>().Create(existingDto);
-
-            LecturerDTO updateDto = new LecturerDTO
             {
                 Id = Guid.NewGuid(),
-                FirstName = "ChangedName",
-                LastName = "ChangedLast",
-                Qualifications = "Master"
+                FirstName = "Muudetud",
+                LastName = "Nimi",
+                Qualifications = "Doktorikraad"
             };
 
-            // tegevus
-            var result = await Svc<ILecturersServices>().Update(updateDto);
+            //tegevus
+            var result = await Svc<ILecturersServices>().Update(dto);
+            var existingResult = await Svc<ILecturersServices>().DetailAsync(existingLecturer.Id);
 
-            var existingResult = await Svc<ILecturersServices>()
-                .DetailAsync(existingLecturer!.Id);
+            //kontroll
+            Assert.Null(result); //midagi ei uuendatud
+            Assert.NotNull(existingResult);
+            Assert.Equal("Test", existingResult.FirstName); //vanad andmed on alles
+            Assert.Equal("Õppejõud", existingResult.LastName);
+            Assert.Equal("Bakalaureusekraad", existingResult.Qualifications);
+            Assert.Single(Svc<KeelteKoolV2Context>().Lecturers); //uut objekti ei tekkinud
+        }
 
-            // kontroll
-            Assert.Null(result);
+        /// <summary>
+        /// Negatiivne test: kontrollib, et null väärtusega DTO korral
+        /// uut õppejõudu ei looda ega muudeta olemasolevaid andmeid.
+        /// </summary>
+        [Fact]
+        public async Task ShouldNot_AddNewLecturer_WhenDtoIsNull()
+        {
+            //ülesseade
+            Lecturer existingLecturer = await AddObjectToDB();
+
+            //tegevus
+            var result = await Svc<ILecturersServices>().Create(null!);
+            var existingResult = await Svc<ILecturersServices>().DetailAsync(existingLecturer.Id);
+
+            //kontroll
+            Assert.Null(result); //uut objekti ei loodud
+            Assert.Single(Svc<KeelteKoolV2Context>().Lecturers); //andmebaasis on ainult varasem objekt
             Assert.NotNull(existingResult);
             Assert.Equal(existingLecturer.Id, existingResult.Id);
-            Assert.Equal("UpdateExistingTest", existingResult.FirstName);
-            Assert.Equal("UpdateExistingLast", existingResult.LastName);
-            Assert.Equal("Bachelor", existingResult.Qualifications);
+            Assert.Equal("Test", existingResult.FirstName);
         }
 
         /// <summary>
-        /// Kontrollib, et null väärtusega DTO korral ei looda uut õppejõudu
-        /// ega muudeta olemasolevaid andmeid.
+        /// Negatiivne test: kontrollib, et null väärtusega DTO korral
+        /// õppejõu andmeid ei uuendata.
         /// </summary>
         [Fact]
-        public async Task Should_ReturnNull_WhenCreatingWithNullDto()
+        public async Task ShouldNot_UpdateLecturer_WhenDtoIsNull()
         {
-            // ülesseade
-            var service = Svc<ILecturersServices>();
+            //ülesseade
+            Lecturer existingLecturer = await AddObjectToDB();
+            DateTime oldModifiedAt = existingLecturer.ModifiedAt;
 
-            var lecturer = await service.Create(new LecturerDTO
-            {
-                FirstName = "Test",
-                LastName = "Lecturer",
-                Qualifications = "Master"
-            });
+            //tegevus
+            var result = await Svc<ILecturersServices>().Update(null!);
+            var existingResult = await Svc<ILecturersServices>().DetailAsync(existingLecturer.Id);
 
-            // tegevus
-            var result = await service.Create(null!);
-            var existingLecturer = await service.DetailAsync(lecturer!.Id);
-
-            // kontroll
-            Assert.Null(result);
-            Assert.NotNull(existingLecturer);
-            Assert.Equal(lecturer.Id, existingLecturer.Id);
-            Assert.Equal("Test", existingLecturer.FirstName);
-            Assert.Equal("Lecturer", existingLecturer.LastName);
-            Assert.Equal("Master", existingLecturer.Qualifications);
+            //kontroll
+            Assert.Null(result); //midagi ei uuendatud
+            Assert.NotNull(existingResult);
+            Assert.Equal("Test", existingResult.FirstName); //andmed on samad
+            Assert.Equal("Õppejõud", existingResult.LastName);
+            Assert.Equal("Bakalaureusekraad", existingResult.Qualifications);
+            Assert.Equal(oldModifiedAt, existingResult.ModifiedAt); //muutmise aeg ei muutunud
         }
 
         /// <summary>
-        /// Kontrollib, et tühja GUID väärtuse korral õppejõudu ei leita.
+        /// Negatiivne test: kontrollib, et tühja GUID-i (Guid.Empty) korral
+        /// õppejõudu ei leita.
         /// </summary>
         [Fact]
-        public async Task Should_ReturnNull_WhenSearchingWithEmptyGuid()
+        public async Task ShouldNot_ReturnLecturer_WhenGuidIsEmpty()
         {
-            // ülesseade
-            var service = Svc<ILecturersServices>();
+            //ülesseade
+            Lecturer existingLecturer = await AddObjectToDB();
 
-            var lecturer = await service.Create(new LecturerDTO
-            {
-                FirstName = "Existing",
-                LastName = "Lecturer",
-                Qualifications = "Master"
-            });
+            //tegevus
+            var result = await Svc<ILecturersServices>().DetailAsync(Guid.Empty);
+            var existingResult = await Svc<ILecturersServices>().DetailAsync(existingLecturer.Id);
 
-            // tegevus
-            var result = await service.DetailAsync(Guid.Empty);
-            var existingLecturer = await service.DetailAsync(lecturer!.Id);
-
-            // kontroll
-            Assert.Null(result);
-            Assert.NotNull(existingLecturer);
-            Assert.Equal(lecturer.Id, existingLecturer.Id);
-            Assert.Equal("Existing", existingLecturer.FirstName);
-            Assert.Equal("Lecturer", existingLecturer.LastName);
-            Assert.Equal("Master", existingLecturer.Qualifications);
+            //kontroll
+            Assert.Null(result); //tühja id-ga objekti ei leitud
+            Assert.NotEqual(Guid.Empty, existingLecturer.Id); //lisatud objektil ei ole tühi id
+            Assert.NotNull(existingResult);
+            Assert.Equal(existingLecturer.Id, existingResult.Id);
+            Assert.Equal("Test", existingResult.FirstName);
         }
 
         /// <summary>
-        /// Kontrollib, et tühjad ees- ja perekonnanimed asendatakse vaikeväärtustega.
+        /// Negatiivne test: kontrollib, et null väärtusega ees- ja perekonnanime
+        /// korral õppejõudu andmebaasi ei lisata.
         /// </summary>
         [Fact]
-        public async Task Should_UseDefaultNames_WhenFirstNameAndLastNameAreEmpty()
+        public async Task ShouldNot_AddNewLecturer_WhenFieldsAreNull()
         {
-            // ülesseade
-            var service = Svc<ILecturersServices>();
+            //ülesseade
+            LecturerDTO newLecturer = MockLecturerDTOData();
+            newLecturer.FirstName = null!;
+            newLecturer.LastName = null!;
 
-            LecturerDTO dto = new LecturerDTO
-            {
-                FirstName = "",
-                LastName = "",
-                Qualifications = "Master"
-            };
+            //tegevus
+            var result = await Svc<ILecturersServices>().Create(newLecturer);
 
-            // tegevus
-            var result = await service.Create(dto);
-
-            // kontroll
-            Assert.NotNull(result);
-            Assert.NotEqual(Guid.Empty, result.Id);
-            Assert.Equal("Martin", result.FirstName);
-            Assert.Equal("Rossakov", result.LastName);
-            Assert.Equal("Master", result.Qualifications);
+            //kontroll
+            Assert.Null(result); //teenus lükkas objekti lisamise tagasi
+            Assert.Empty(Svc<KeelteKoolV2Context>().Lecturers); //andmebaasi ei lisatud midagi
+            Assert.Null(newLecturer.FirstName); //teenus ei pannud vaikeväärtusi
+            Assert.Null(newLecturer.LastName);
+            Assert.Equal("Bakalaureusekraad", newLecturer.Qualifications);
         }
 
         /// <summary>
-        /// Kontrollib, et õppejõu loomisel salvestatakse kasutaja ID ja kuupäevad.
+        /// Kontrollib, et õppejõu loomisel salvestatakse kasutaja ID
+        /// ning loomise ja muutmise aeg on loomise hetkel.
         /// </summary>
         [Fact]
-        public async Task Should_SaveUserIdAndDates_WhenCreatingLecturer()
+        public async Task Should_SaveUserIdAndDates_WhenLecturerIsCreated()
         {
-            // ülesseade
-            var userId = "test-user-123";
-            var beforeCreate = DateTime.Now;
+            //ülesseade
+            LecturerDTO dto = MockLecturerDTOData();
+            dto.UserID = "test-user-123";
+            DateTime beforeCreate = DateTime.Now;
 
-            LecturerDTO dto = new LecturerDTO
-            {
-                FirstName = "DateTest",
-                LastName = "Lecturer",
-                Qualifications = "Master",
-                UserID = userId
-            };
-
-            // tegevus
+            //tegevus
             var result = await Svc<ILecturersServices>().Create(dto);
-            var afterCreate = DateTime.Now;
+            DateTime afterCreate = DateTime.Now;
 
-            // kontroll
+            //kontroll
             Assert.NotNull(result);
-            Assert.NotEqual(Guid.Empty, result.Id);
-            Assert.Equal(userId, result.UserID);
-            Assert.True(result.CreatedAt >= beforeCreate);
+            Assert.Equal("test-user-123", result.UserID); //kasutaja id salvestati
+            Assert.True(result.CreatedAt >= beforeCreate); //loomise aeg on õiges vahemikus
             Assert.True(result.CreatedAt <= afterCreate);
-            Assert.True(result.ModifiedAt >= beforeCreate);
+            Assert.True(result.ModifiedAt >= beforeCreate); //muutmise aeg on õiges vahemikus
             Assert.True(result.ModifiedAt <= afterCreate);
         }
 
         /// <summary>
-        /// Kontrollib, et null väärtusega DTO korral ei uuendata õppejõu andmeid.
+        /// Kontrollib, et kahe õppejõu lisamisel saavad mõlemad erineva ID
+        /// ja mõlemad leitakse andmebaasist üles.
         /// </summary>
         [Fact]
-        public async Task Should_ReturnNull_WhenUpdatingWithNullDto()
+        public async Task Should_AddTwoLecturersWithDifferentIds_WhenCreatedTwice()
         {
-            // ülesseade
-            var service = Svc<ILecturersServices>();
+            //ülesseade
+            LecturerDTO secondDto = MockLecturerDTOData();
+            secondDto.FirstName = "Teine";
 
-            var lecturer = await service.Create(new LecturerDTO
-            {
-                FirstName = "Original",
-                LastName = "Lecturer",
-                Qualifications = "Bachelor",
-                UserID = "original-user"
-            });
+            //tegevus
+            Lecturer first = await AddObjectToDB();
+            var second = await Svc<ILecturersServices>().Create(secondDto);
+            var firstResult = await Svc<ILecturersServices>().DetailAsync(first.Id);
+            var secondResult = await Svc<ILecturersServices>().DetailAsync(second.Id);
 
-            // tegevus
-            var result = await service.Update(null!);
-            var existing = await service.DetailAsync(lecturer!.Id);
-
-            // kontroll
-            Assert.Null(result);
-            Assert.NotNull(existing);
-            Assert.Equal(lecturer.Id, existing.Id);
-            Assert.Equal("Original", existing.FirstName);
-            Assert.Equal("Lecturer", existing.LastName);
-            Assert.Equal("Bachelor", existing.Qualifications);
-            Assert.Equal("original-user", existing.UserID);
+            //kontroll
+            Assert.NotNull(second);
+            Assert.NotEqual(first.Id, second.Id); //id-d on unikaalsed
+            Assert.Equal(2, Svc<KeelteKoolV2Context>().Lecturers.Count()); //andmebaasis on 2 õppejõudu
+            Assert.Equal("Test", firstResult.FirstName); //esimese andmed ei läinud teisega segamini
+            Assert.Equal("Teine", secondResult.FirstName);
         }
 
-        /// <summary>
-        /// Kontrollib, et null väärtusega ees- ja perekonnanimed
-        /// asendatakse õppejõu loomisel vaikeväärtustega.
-        /// </summary>
-        [Fact]
-        public async Task Should_UseDefaultNames_WhenFirstNameAndLastNameAreNull()
-        {
-            // ülesseade
-            var service = Svc<ILecturersServices>();
-
-            LecturerDTO dto = new LecturerDTO
-            {
-                FirstName = null!,
-                LastName = null!,
-                Qualifications = "Master",
-                UserID = "null-name-test"
-            };
-
-            // tegevus
-            var result = await service.Create(dto);
-
-            // kontroll
-            Assert.NotNull(result);
-            Assert.NotEqual(Guid.Empty, result.Id);
-            Assert.Equal("Martin", result.FirstName);
-            Assert.Equal("Rossakov", result.LastName);
-            Assert.Equal("Master", result.Qualifications);
-            Assert.Equal("null-name-test", result.UserID);
-
-            var saved = await service.DetailAsync(result.Id);
-
-            Assert.NotNull(saved);
-            Assert.Equal(result.Id, saved.Id);
-            Assert.Equal("Martin", saved.FirstName);
-        }
+        // ABIMEETODID
 
         /// <summary>
-        /// Kontrollib, et loodud õppejõu andmed säilivad andmebaasis.
+        /// Lisab andmebaasi testimiseks ühe õppejõu ja tagastab selle.
         /// </summary>
-        [Fact]
-        public async Task Should_SaveLecturerAndRetrieveItFromDatabase()
+        private async Task<Lecturer> AddObjectToDB()
         {
-            // ülesseade
-            var service = Svc<ILecturersServices>();
-            LecturerDTO dto = MockLecturerDTOData();
-            dto.UserID = "saved-test-user";
-
-            // tegevus
-            var created = await service.Create(dto);
-            var saved = await service.DetailAsync(created!.Id);
-
-            // kontroll
-            Assert.NotNull(created);
-            Assert.NotEqual(Guid.Empty, created.Id);
-            Assert.NotNull(saved);
-            Assert.Equal(created.Id, saved.Id);
-            Assert.Equal("Test", saved.FirstName);
-            Assert.Equal("Test", saved.LastName);
-            Assert.Equal("Bachelor", saved.Qualifications);
-            Assert.Equal("saved-test-user", saved.UserID);
-        }
-
-        /// <summary>
-        /// Kontrollib, et õppejõu uuendatud andmed säilivad andmebaasis.
-        /// </summary>
-        [Fact]
-        public async Task Should_SaveUpdatedLecturerAndRetrieveItFromDatabase()
-        {
-            // ülesseade
-            var service = Svc<ILecturersServices>();
-            LecturerDTO dto = new LecturerDTO
-            {
-                FirstName = "BeforeUpdate",
-                LastName = "OldLastName",
-                Qualifications = "Bachelor"
-            };
-
-            var created = await service.Create(dto);
-
-            LecturerDTO updateDto = new LecturerDTO
-            {
-                Id = created!.Id,
-                FirstName = "AfterUpdate",
-                LastName = "NewLastName",
-                Qualifications = "Master"
-            };
-
-            // tegevus
-            var updated = await service.Update(updateDto);
-            var saved = await service.DetailAsync(created.Id);
-
-            // kontroll
-            Assert.NotNull(updated);
-            Assert.Equal(created.Id, updated.Id);
-            Assert.Equal("AfterUpdate", updated.FirstName);
-            Assert.Equal("NewLastName", updated.LastName);
-            Assert.Equal("Master", updated.Qualifications);
-            Assert.NotNull(saved);
-            Assert.Equal("AfterUpdate", saved.FirstName);
-            Assert.Equal("NewLastName", saved.LastName);
-            Assert.Equal("Master", saved.Qualifications);
+            //tekitame uue objekti
+            LecturerDTO lecturer = MockLecturerDTOData();
+            //lisame andmebaasi
+            var createdLecturer = await Svc<ILecturersServices>().Create(lecturer);
+            return createdLecturer;
         }
 
         /// <summary>
         /// Loob testimiseks õppejõu DTO näidisandmed.
         /// </summary>
-        private static LecturerDTO MockLecturerDTOData()
+        private LecturerDTO MockLecturerDTOData()
         {
             return new LecturerDTO
             {
                 FirstName = "Test",
-                LastName = "Test",
-                Qualifications = "Bachelor"
+                LastName = "Õppejõud",
+                Qualifications = "Bakalaureusekraad"
             };
         }
     }
