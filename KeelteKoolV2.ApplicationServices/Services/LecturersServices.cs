@@ -23,17 +23,14 @@ namespace KeelteKoolV2.ApplicationServices.Services
             {
                 return null;
             }
+            //kui eesnimi või perekonnanimi on tühi, siis objekti ei lisata
+            if (string.IsNullOrEmpty(dto.FirstName) || string.IsNullOrEmpty(dto.LastName))
+            {
+                return null;
+            }
             //convert to domain-type
             Lecturer domain = new Lecturer();
             domain.Id = Guid.NewGuid();
-            if (string.IsNullOrEmpty(dto.FirstName))
-            {
-                dto.FirstName = "Martin";
-            }
-            if (string.IsNullOrEmpty(dto.LastName))
-            {
-                dto.LastName = "Rossakov";
-            }
             domain.FirstName = dto.FirstName;
             domain.LastName = dto.LastName;
             domain.Qualifications = dto.Qualifications;
