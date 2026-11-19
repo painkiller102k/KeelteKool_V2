@@ -1,254 +1,190 @@
-﻿using OpenQA.Selenium;
+using OpenQA.Selenium;
 using OpenQA.Selenium.Firefox;
+using System;
+using System.Collections.Generic;
+using System.Text;
 using Xunit;
 
 namespace KeelteKoolV2.SeleniumTesting
 {
-    //Õppejõudude (Lecturers) kasutajaliidese testid, mis kontrollivad CRUD tegevusi brauseri kaudu.
-    //Iga test loob endale unikaalse eesnimega õppejõu, et testid ei sõltuks üksteisest.
+    [TestCaseOrderer("KeelteKoolV2.SeleniumTesting.PriorityOrderer", "KeelteKoolV2.SeleniumTesting")]
     public class LecturerFrontendTests
     {
+        public static string thisRunGuid { get; set; }
+
         /// <summary>
         /// Testib uue õppejõu loomist kasutajaliidese kaudu
         /// ja kontrollib, et loodud õppejõud kuvatakse nimekirjas.
         /// </summary>
         [Fact]
+        [Order(1)]
         public void Should_CreateLecturer_AndDisplayItInIndex()
         {
             /* Ülesseade */
-            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); //ootame elementide ilmumist kuni 5 sekundit
+            IWebDriver driver = TestSetup_NavigateToIndex();
 
-            //tekitame unikaalse id, et just enda loodud õppejõud nimekirjast üles leida
-            string uniqueId = Guid.NewGuid().ToString("N");
-            string firstName = $"Test{uniqueId}";
-            string lastName = "Lecturer";
-            string qualifications = "Master of Education";
+            /* tegevus */
+            IWebElement indexCreateButton = driver.FindElement(By.LinkText("Add lecturer"));
+            indexCreateButton.Click(); //click on create button
 
-            try
+            string uniqueId = DataEntry_Lecturer(driver); //enter data in view
+            thisRunGuid = uniqueId;
+
+            IWebElement CreateCreateButton = driver.FindElement(By.CssSelector("form button[type='submit']"));
+            CreateCreateButton.Click(); //click create button in create view
+            Thread.Sleep(500);
+
+            /* kontroll */
+
+            //kogume andmed
+            string currentUrl = driver.Url;
+            var tableOfIndex = driver.FindElement(By.TagName("table"));
+            List<IWebElement> rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            bool isObjectFound = false;
+            string LecturerFirstNameData = "";
+            string LecturerLastNameData = "";
+            string LecturerQualificationsData = "";
+            foreach (var row in rowsOfTable)
             {
-                driver.Navigate().GoToUrl("https://localhost:7191/"); //navigeeritav aadress
-
-                /* Tegevus */
-                IWebElement lecturersLink =
-                    driver.FindElement(By.LinkText("Õppejõud")); //otsime testitava osa lingi
-                lecturersLink.Click(); //simuleeritud tegevus elemendiga, antud juhul klikk
-
-                IWebElement createLink =
-                    driver.FindElement(By.LinkText("Add lecturer")); //otsime loomise nupu
-                createLink.Click(); //vajutame loomise nupule
-
-                //sisestame andmed loomise vormi
-                driver.FindElement(By.Name("FirstName"))
-                    .SendKeys(firstName);
-
-                driver.FindElement(By.Name("LastName"))
-                    .SendKeys(lastName);
-
-                driver.FindElement(By.Name("Qualifications"))
-                    .SendKeys(qualifications);
-
-                //vajutame loomise vaates salvestamise nupule
-                driver.FindElement(
-                    By.CssSelector("form button[type='submit']"))
-                    .Click();
-
-                /* Kontroll */
-                //kontrollime, et pärast loomist suunati tagasi õppejõudude nimekirja
-                Assert.Contains("/Lecturers", driver.Url);
-
-                //kogume andmed: võtame kõik nimekirja tabeli read
-                var rows = driver.FindElements(
-                    By.CssSelector("table tbody tr"));
-
-                //otsime realt, kus on sama eesnimi, perekonnanimi ja kvalifikatsioon, mis sisestati
-                bool lecturerExists = rows.Any(row =>
-                    row.Text.Contains(firstName) &&
-                    row.Text.Contains(lastName) &&
-                    row.Text.Contains(qualifications));
-
-                //kontrollime, et loodud õppejõud on nimekirjas olemas
-                Assert.True(
-                    lecturerExists,
-                    "Loodud õppejõudu ei leitud nimekirjast.");
+                var cells = row.FindElements(By.TagName("td"));
+                if (cells[0].Text == thisRunGuid)
+                {
+                    isObjectFound = true;
+                    LecturerFirstNameData = cells[0].Text;
+                    LecturerLastNameData = cells[1].Text;
+                    LecturerQualificationsData = cells[2].Text;
+                }
             }
-            finally
-            {
-                driver.Quit(); //sulgeme akna ka siis, kui test kukub läbi
-            }
+            //sulgeme akna
+            Thread.Sleep(500);
+            driver.Quit();
+            //assertime
+            Assert.True(isObjectFound);
+            Assert.Contains("/Lecturers", currentUrl);
+            Assert.Equal(uniqueId, LecturerFirstNameData);
+            Assert.Equal("Automaattestija", LecturerLastNameData);
+            Assert.Equal("Tarkvaraarendaja", LecturerQualificationsData);
+            Assert.True((uniqueId == LecturerFirstNameData) && ("Automaattestija" == LecturerLastNameData));
         }
-
 
         /// <summary>
         /// Testib õppejõu vaatamist ja kontrollib, et detailvaates
         /// kuvatakse sama õppejõu eesnimi, perekonnanimi ja kvalifikatsioon.
         /// </summary>
         [Fact]
+        [Order(2)]
         public void Should_OpenLecturerDetails_AndDisplayCorrectData()
         {
-            /* Ülesseade */
-            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); //ootame elementide ilmumist kuni 5 sekundit
+            /* ülesseade */
+            IWebDriver driver = TestSetup_NavigateToIndex();
+            var tableOfIndex = driver.FindElement(By.TagName("table"));
+            List<IWebElement> rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            bool isObjectFound = false;
 
-            //tekitame unikaalse id, et just enda loodud õppejõud nimekirjast üles leida
-            string uniqueId = Guid.NewGuid().ToString("N");
-            string firstName = $"Read{uniqueId}";
-            string lastName = "TestLecturer";
-            string qualifications = "Bachelor of Science";
-
-            try
+            /* tegevus */
+            foreach (var row in rowsOfTable)
             {
-                driver.Navigate().GoToUrl("https://localhost:7191/"); //navigeeritav aadress
-
-                /* Tegevus: avame õppejõudude nimekirja */
-                driver.FindElement(By.LinkText("Õppejõud")).Click(); //avame õppejõudude lehe
-                driver.FindElement(By.LinkText("Add lecturer")).Click(); //vajutame loomise nupule
-
-                //sisestame andmed loomise vormi
-                driver.FindElement(By.Name("FirstName")).SendKeys(firstName);
-                driver.FindElement(By.Name("LastName")).SendKeys(lastName);
-                driver.FindElement(By.Name("Qualifications")).SendKeys(qualifications);
-
-                //salvestame õppejõu
-                driver.FindElement(
-                    By.CssSelector("form button[type='submit']")).Click();
-
-                /* Leiame nimekirjast just enda loodud õppejõu */
-                var rows = driver.FindElements(By.CssSelector("table tbody tr")); //kõik tabeli read
-
-                //otsime rea, kus on meie sisestatud andmed
-                var createdRow = rows.FirstOrDefault(row =>
-                    row.Text.Contains(firstName) &&
-                    row.Text.Contains(lastName) &&
-                    row.Text.Contains(qualifications));
-
-                //kontrollime, et loodud õppejõud leiti nimekirjast
-                Assert.NotNull(createdRow);
-
-                /* Avame sama õppejõu detailvaate */
-                createdRow!.FindElement(By.LinkText("Details")).Click(); //vajutame selle rea "Details" lingile
-
-                /* Kontroll: detailvaates on õiged andmed */
-                //kogume andmed: võtame kogu detailvaate teksti
-                string detailsText = driver.FindElement(By.TagName("body")).Text;
-
-                Assert.Contains(firstName, detailsText); //detailvaates kuvatakse sama eesnimi
-                Assert.Contains(lastName, detailsText); //detailvaates kuvatakse sama perekonnanimi
-                Assert.Contains(qualifications, detailsText); //detailvaates kuvatakse sama kvalifikatsioon
-                Assert.Contains("Back to list", detailsText); //detailvaates on nimekirja tagasimineku nupp
+                var firstNameElement = row.FindElements(By.TagName("td"))[0].Text;
+                if ((firstNameElement == thisRunGuid))
+                {
+                    isObjectFound = true;
+                    var clickAction = row.FindElement(By.LinkText("Details"));
+                    clickAction.Click();
+                    break;
+                }
             }
-            finally
-            {
-                driver.Quit(); //sulgeme akna ka siis, kui test kukub läbi
-            }
+            Thread.Sleep(1000);
+            //find data
+            var detailsData = driver.FindElements(By.TagName("dd"));
+            string details_firstName = detailsData[0].Text; //omab testimise jaoks vajalikku id-d
+            string details_lastName = detailsData[1].Text;
+            string details_qualifications = detailsData[2].Text;
+            string details_createdAt = detailsData[3].Text;
+            IWebElement goBack = driver.FindElement(By.LinkText("Back to list"));
+            goBack.Click();
+            Thread.Sleep(1000);
+            driver.Quit();
+
+            /* Kontroll */
+            Assert.True(isObjectFound);
+            Assert.NotEmpty(details_firstName);
+            Assert.NotEmpty(details_lastName);
+            Assert.NotEmpty(details_qualifications);
+            Assert.NotEmpty(details_createdAt);
+            Assert.Equal(thisRunGuid, details_firstName);
+            Assert.Equal("Automaattestija", details_lastName);
+            Assert.Equal("Tarkvaraarendaja", details_qualifications);
         }
-
 
         /// <summary>
         /// Testib olemasoleva õppejõu andmete muutmist ja kontrollib,
-        /// et nimekirjas kuvatakse uuendatud andmed.
+        /// et detailvaates kuvatakse uuendatud andmed.
         /// </summary>
         [Fact]
+        [Order(3)]
         public void Should_UpdateLecturer_AndDisplayUpdatedData()
         {
             /* Ülesseade */
-            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); //ootame elementide ilmumist kuni 5 sekundit
+            IWebDriver driver = TestSetup_NavigateToIndex();
+            var tableOfIndex = driver.FindElement(By.TagName("table"));
+            List<IWebElement> rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            bool isObjectFound = false;
 
-            //esialgsed andmed, millega õppejõud luuakse
-            string uniqueId = Guid.NewGuid().ToString("N");
-            string firstName = $"Update{uniqueId}";
-            string lastName = "OldLecturer";
-            string qualifications = "Bachelor";
-
-            //uued andmed, millega õppejõudu muudetakse
-            string updatedFirstName = $"Updated{uniqueId}";
-            string updatedLastName = "NewLecturer";
-            string updatedQualifications = "Master of Science";
-
-            try
+            /* tegevus */
+            foreach (var row in rowsOfTable)
             {
-                driver.Navigate().GoToUrl("https://localhost:7191/"); //navigeeritav aadress
-
-                /* Tegevus: loome õppejõu */
-                driver.FindElement(By.LinkText("Õppejõud")).Click(); //avame õppejõudude lehe
-                driver.FindElement(By.LinkText("Add lecturer")).Click(); //vajutame loomise nupule
-
-                //sisestame esialgsed andmed
-                driver.FindElement(By.Name("FirstName")).SendKeys(firstName);
-                driver.FindElement(By.Name("LastName")).SendKeys(lastName);
-                driver.FindElement(By.Name("Qualifications")).SendKeys(qualifications);
-
-                //salvestame õppejõu
-                driver.FindElement(
-                    By.CssSelector("form button[type='submit']")).Click();
-
-                /* Leiame loodud õppejõu */
-                var rows = driver.FindElements(By.CssSelector("table tbody tr")); //kõik tabeli read
-
-                //otsime rea, kus on meie sisestatud andmed
-                var createdRow = rows.FirstOrDefault(row =>
-                    row.Text.Contains(firstName) &&
-                    row.Text.Contains(lastName) &&
-                    row.Text.Contains(qualifications));
-
-                //kontrollime, et loodud õppejõud leiti nimekirjast
-                Assert.NotNull(createdRow);
-
-                /* Avame muutmise lehe */
-                createdRow!.FindElement(By.LinkText("Edit")).Click(); //vajutame selle rea "Edit" lingile
-
-                /* Muudame andmeid */
-                //puhastame eesnime välja ja sisestame uue eesnime
-                var firstNameInput = driver.FindElement(By.Name("FirstName"));
-                firstNameInput.Clear();
-                firstNameInput.SendKeys(updatedFirstName);
-
-                //puhastame perekonnanime välja ja sisestame uue perekonnanime
-                var lastNameInput = driver.FindElement(By.Name("LastName"));
-                lastNameInput.Clear();
-                lastNameInput.SendKeys(updatedLastName);
-
-                //puhastame kvalifikatsiooni välja ja sisestame uue kvalifikatsiooni
-                var qualificationsInput =
-                    driver.FindElement(By.Name("Qualifications"));
-                qualificationsInput.Clear();
-                qualificationsInput.SendKeys(updatedQualifications);
-
-                //salvestame muudatused
-                driver.FindElement(
-                    By.CssSelector("form button[type='submit']")).Click();
-
-                /* Kontroll: nimekirjas on uuendatud andmed */
-                //kogume andmed: võtame pärast muutmist kõik tabeli read
-                var updatedRows = driver.FindElements(
-                    By.CssSelector("table tbody tr"));
-
-                //otsime rea, kus on uued andmed
-                bool lecturerWasUpdated = updatedRows.Any(row =>
-                    row.Text.Contains(updatedFirstName) &&
-                    row.Text.Contains(updatedLastName) &&
-                    row.Text.Contains(updatedQualifications));
-
-                //kontrollime, et nimekirjas kuvatakse uuendatud andmed
-                Assert.True(
-                    lecturerWasUpdated,
-                    "Õppejõu uuendatud andmeid ei leitud nimekirjast.");
-
-                //otsime, kas nimekirjas on veel vanade andmetega rida
-                bool oldDataStillExists = updatedRows.Any(row =>
-                    row.Text.Contains(firstName) &&
-                    row.Text.Contains(lastName));
-
-                //kontrollime, et vanu andmeid enam ei kuvata (andmed muudeti, mitte ei lisatud uut rida)
-                Assert.False(
-                    oldDataStillExists,
-                    "Nimekirjas kuvatakse endiselt õppejõu vanu andmeid.");
+                var firstNameElement = row.FindElements(By.TagName("td"))[0].Text;
+                if ((firstNameElement == thisRunGuid))
+                {
+                    isObjectFound = true;
+                    var clickAction = row.FindElement(By.LinkText("Edit"));
+                    clickAction.Click();
+                    break;
+                }
             }
-            finally
+            Thread.Sleep(500);
+            DataClear_CreateUpdate_SaveName(driver);
+            DataEntry_Lecturer(driver, true, false);
+            IWebElement updateclick = driver.FindElement(By.CssSelector("form button[type='submit']"));
+            updateclick.Click();
+            Thread.Sleep(1000);
+
+            /* kontrolle */
+            //otsi objekt üles:
+            tableOfIndex = driver.FindElement(By.TagName("table"));
+            rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            isObjectFound = false;
+            foreach (var row in rowsOfTable)
             {
-                driver.Quit(); //sulgeme akna ka siis, kui test kukub läbi
+                var firstNameElement = row.FindElements(By.TagName("td"))[0].Text;
+                if ((firstNameElement == thisRunGuid))
+                {
+                    isObjectFound = true;
+                    var clickAction = row.FindElement(By.LinkText("Details"));
+                    clickAction.Click();
+                    break;
+                }
             }
+            Thread.Sleep(1000);
+            //find data
+            var detailsData = driver.FindElements(By.TagName("dd"));
+            string details_firstName = detailsData[0].Text; //unikaalne id
+            string details_lastName = detailsData[1].Text;
+            string details_qualifications = detailsData[2].Text;
+            Thread.Sleep(1000);
+            driver.Quit();
+
+            Assert.True(isObjectFound);
+            Assert.NotEmpty(details_firstName);
+            Assert.Equal(thisRunGuid, details_firstName);
+            Assert.Equal("Analüütik", details_lastName);
+            Assert.Equal("Testiinsener", details_qualifications);
+            Assert.NotEqual("Automaattestija", details_lastName);
+            Assert.NotEqual("Tarkvaraarendaja", details_qualifications);
         }
 
         /// <summary>
@@ -256,294 +192,302 @@ namespace KeelteKoolV2.SeleniumTesting
         /// et kustutatud õppejõudu ei kuvata enam nimekirjas.
         /// </summary>
         [Fact]
+        [Order(4)]
         public void Should_DeleteLecturer_AndRemoveItFromIndex()
         {
-            /* Ülesseade */
-            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); //ootame elementide ilmumist kuni 5 sekundit
+            /* ülesseade */
+            IWebDriver driver = TestSetup_NavigateToIndex();
+            var tableOfIndex = driver.FindElement(By.TagName("table"));
+            List<IWebElement> rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            bool isObjectFound = false;
 
-            //tekitame unikaalse id, et just enda loodud õppejõud nimekirjast üles leida
-            string uniqueId = Guid.NewGuid().ToString("N");
-            string firstName = $"Delete{uniqueId}";
-            string lastName = "DeleteLecturer";
-            string qualifications = "Test Qualification";
-
-            try
+            /* tegevus */
+            foreach (var row in rowsOfTable)
             {
-                driver.Navigate().GoToUrl("https://localhost:7191/"); //navigeeritav aadress
-
-                /* Tegevus: loome õppejõu */
-                driver.FindElement(By.LinkText("Õppejõud")).Click(); //avame õppejõudude lehe
-                driver.FindElement(By.LinkText("Add lecturer")).Click(); //vajutame loomise nupule
-
-                //sisestame andmed loomise vormi
-                driver.FindElement(By.Name("FirstName")).SendKeys(firstName);
-                driver.FindElement(By.Name("LastName")).SendKeys(lastName);
-                driver.FindElement(By.Name("Qualifications")).SendKeys(qualifications);
-
-                //salvestame õppejõu
-                driver.FindElement(
-                    By.CssSelector("form button[type='submit']")).Click();
-
-                /* Leiame loodud õppejõu */
-                var rows = driver.FindElements(By.CssSelector("table tbody tr")); //kõik tabeli read
-
-                //otsime rea, kus on meie sisestatud andmed
-                var createdRow = rows.FirstOrDefault(row =>
-                    row.Text.Contains(firstName) &&
-                    row.Text.Contains(lastName) &&
-                    row.Text.Contains(qualifications));
-
-                //kontrollime, et loodud õppejõud leiti nimekirjast
-                Assert.NotNull(createdRow);
-
-                /* Avame kustutamise lehe */
-                createdRow!.FindElement(By.LinkText("Delete")).Click(); //vajutame selle rea "Delete" lingile
-
-                /* Kontrollime, et kustutamise lehel on õige õppejõud */
-                //kogume andmed: võtame kogu kustutamise lehe teksti
-                string deletePageText =
-                    driver.FindElement(By.TagName("body")).Text;
-
-                Assert.Contains(firstName, deletePageText); //kustutamise lehel on sama eesnimi
-                Assert.Contains(lastName, deletePageText); //kustutamise lehel on sama perekonnanimi
-
-                /* Kinnitame kustutamise */
-                driver.FindElement(
-                    By.CssSelector("form button[type='submit']")).Click(); //vajutame "Delete" nupule
-
-                /* Kontroll: õppejõudu ei ole enam nimekirjas */
-                //kogume andmed: võtame pärast kustutamist kõik tabeli read
-                var remainingRows = driver.FindElements(
-                    By.CssSelector("table tbody tr"));
-
-                //otsime, kas kustutatud õppejõu rida on veel alles
-                bool lecturerStillExists = remainingRows.Any(row =>
-                    row.Text.Contains(firstName) &&
-                    row.Text.Contains(lastName) &&
-                    row.Text.Contains(qualifications));
-
-                //kontrollime, et kustutatud õppejõudu nimekirjas enam ei ole
-                Assert.False(
-                    lecturerStillExists,
-                    "Kustutatud õppejõud kuvatakse endiselt nimekirjas.");
+                var firstNameElement = row.FindElements(By.TagName("td"))[0].Text;
+                if ((firstNameElement == thisRunGuid))
+                {
+                    isObjectFound = true;
+                    var clickAction = row.FindElement(By.LinkText("Delete"));
+                    clickAction.Click();
+                    break;
+                }
             }
-            finally
+            Thread.Sleep(1000);
+            string delete_firstName = driver.FindElements(By.TagName("dd"))[0].Text;
+            IWebElement clickDelete = driver.FindElement(By.CssSelector("form button[type='submit']"));
+            clickDelete.Click();
+            Thread.Sleep(1000);
+
+            //kontroll
+            bool isObjectFoundAfterDelete = false;
+            tableOfIndex = driver.FindElement(By.TagName("table"));
+            rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            foreach (var row in rowsOfTable)
             {
-                driver.Quit(); //sulgeme akna ka siis, kui test kukub läbi
+                var firstNameElement = row.FindElements(By.TagName("td"))[0].Text;
+                if ((firstNameElement == thisRunGuid))
+                {
+                    isObjectFoundAfterDelete = true;
+                    break;
+                }
             }
+            driver.Quit();
+
+            Assert.True(isObjectFound);
+            Assert.Equal(thisRunGuid, delete_firstName);
+            Assert.False(isObjectFoundAfterDelete);
+            Assert.True(!isObjectFoundAfterDelete);
         }
-
 
         /// <summary>
         /// Testib õppejõu kustutamise tühistamist ja kontrollib,
         /// et õppejõud jääb pärast tühistamist nimekirja alles.
         /// </summary>
         [Fact]
+        [Order(5)]
         public void Should_CancelLecturerDeletion_AndKeepLecturerInIndex()
         {
             /* Ülesseade */
-            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); //ootame elementide ilmumist kuni 5 sekundit
+            IWebDriver driver = TestSetup_NavigateToIndex();
+            IWebElement indexCreateButton = driver.FindElement(By.LinkText("Add lecturer"));
+            indexCreateButton.Click(); //click on create button
+            string uniqueId = DataEntry_Lecturer(driver); //enter data in view
+            IWebElement CreateCreateButton = driver.FindElement(By.CssSelector("form button[type='submit']"));
+            CreateCreateButton.Click(); //click create button in create view
+            Thread.Sleep(500);
 
-            //tekitame unikaalse id, et just enda loodud õppejõud nimekirjast üles leida
-            string uniqueId = Guid.NewGuid().ToString("N");
-            string firstName = $"Cancel{uniqueId}";
-            string lastName = "CancelDelete";
-            string qualifications = "Test Qualification";
-
-            try
+            /* tegevus */
+            var tableOfIndex = driver.FindElement(By.TagName("table"));
+            List<IWebElement> rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            bool isObjectFound = false;
+            foreach (var row in rowsOfTable)
             {
-                driver.Navigate().GoToUrl("https://localhost:7191/"); //navigeeritav aadress
-
-                /* Tegevus: loome õppejõu */
-                driver.FindElement(By.LinkText("Õppejõud")).Click(); //avame õppejõudude lehe
-                driver.FindElement(By.LinkText("Add lecturer")).Click(); //vajutame loomise nupule
-
-                //sisestame andmed loomise vormi
-                driver.FindElement(By.Name("FirstName")).SendKeys(firstName);
-                driver.FindElement(By.Name("LastName")).SendKeys(lastName);
-                driver.FindElement(By.Name("Qualifications")).SendKeys(qualifications);
-
-                //salvestame õppejõu
-                driver.FindElement(
-                    By.CssSelector("form button[type='submit']")).Click();
-
-                /* Leiame loodud õppejõu */
-                var rows = driver.FindElements(By.CssSelector("table tbody tr")); //kõik tabeli read
-
-                //otsime rea, kus on meie sisestatud andmed
-                var createdRow = rows.FirstOrDefault(row =>
-                    row.Text.Contains(firstName) &&
-                    row.Text.Contains(lastName) &&
-                    row.Text.Contains(qualifications));
-
-                //kontrollime, et loodud õppejõud leiti nimekirjast
-                Assert.NotNull(createdRow);
-
-                /* Avame kustutamise lehe ja tühistame tegevuse */
-                createdRow!.FindElement(By.LinkText("Delete")).Click(); //vajutame selle rea "Delete" lingile
-                driver.FindElement(By.LinkText("Cancel")).Click(); //kustutamise lehel vajutame "Cancel"
-
-                /* Kontroll: õppejõud on endiselt nimekirjas */
-                //kogume andmed: võtame pärast tühistamist kõik tabeli read
-                var remainingRows = driver.FindElements(
-                    By.CssSelector("table tbody tr"));
-
-                //otsime, kas õppejõu rida on endiselt alles
-                bool lecturerStillExists = remainingRows.Any(row =>
-                    row.Text.Contains(firstName) &&
-                    row.Text.Contains(lastName) &&
-                    row.Text.Contains(qualifications));
-
-                //kontrollime, et tühistamise järel ei kustutatud õppejõudu
-                Assert.True(
-                    lecturerStillExists,
-                    "Õppejõud kadus nimekirjast pärast kustutamise tühistamist.");
+                var firstNameElement = row.FindElements(By.TagName("td"))[0].Text;
+                if ((firstNameElement == uniqueId))
+                {
+                    isObjectFound = true;
+                    var clickAction = row.FindElement(By.LinkText("Delete"));
+                    clickAction.Click();
+                    break;
+                }
             }
-            finally
+            Thread.Sleep(1000);
+            IWebElement clickCancel = driver.FindElement(By.LinkText("Cancel"));
+            clickCancel.Click();
+            Thread.Sleep(1000);
+
+            //kontroll
+            bool isObjectFoundAfterCancel = false;
+            string LecturerLastNameData = "";
+            tableOfIndex = driver.FindElement(By.TagName("table"));
+            rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            foreach (var row in rowsOfTable)
             {
-                driver.Quit(); //sulgeme akna ka siis, kui test kukub läbi
+                var cells = row.FindElements(By.TagName("td"));
+                if ((cells[0].Text == uniqueId))
+                {
+                    isObjectFoundAfterCancel = true;
+                    LecturerLastNameData = cells[1].Text;
+                    break;
+                }
             }
+            driver.Quit();
+
+            Assert.True(isObjectFound);
+            Assert.True(isObjectFoundAfterCancel);
+            Assert.False(!isObjectFoundAfterCancel);
+            Assert.Equal("Automaattestija", LecturerLastNameData);
         }
-
 
         /// <summary>
         /// Testib õppejõu muutmislehe avamist ja kontrollib,
         /// et vormi väljad sisaldavad õppejõu praeguseid andmeid.
         /// </summary>
         [Fact]
+        [Order(6)]
         public void Should_OpenLecturerEditPage_WithCorrectExistingData()
         {
             /* Ülesseade */
-            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); //ootame elementide ilmumist kuni 5 sekundit
+            IWebDriver driver = TestSetup_NavigateToIndex();
+            IWebElement indexCreateButton = driver.FindElement(By.LinkText("Add lecturer"));
+            indexCreateButton.Click(); //click on create button
+            string uniqueId = DataEntry_Lecturer(driver); //enter data in view
+            IWebElement CreateCreateButton = driver.FindElement(By.CssSelector("form button[type='submit']"));
+            CreateCreateButton.Click(); //click create button in create view
+            Thread.Sleep(500);
 
-            //tekitame unikaalse id, et just enda loodud õppejõud nimekirjast üles leida
-            string uniqueId = Guid.NewGuid().ToString("N");
-            string firstName = $"Edit{uniqueId}";
-            string lastName = "ExistingLecturer";
-            string qualifications = "Bachelor of Arts";
-
-            try
+            /* tegevus */
+            var tableOfIndex = driver.FindElement(By.TagName("table"));
+            List<IWebElement> rowsOfTable = tableOfIndex.FindElements(By.TagName("tr")).ToList();
+            rowsOfTable.RemoveAt(0);
+            bool isObjectFound = false;
+            foreach (var row in rowsOfTable)
             {
-                driver.Navigate().GoToUrl("https://localhost:7191/"); //navigeeritav aadress
-
-                /* Tegevus: loome õppejõu */
-                driver.FindElement(By.LinkText("Õppejõud")).Click(); //avame õppejõudude lehe
-                driver.FindElement(By.LinkText("Add lecturer")).Click(); //vajutame loomise nupule
-
-                //sisestame andmed loomise vormi
-                driver.FindElement(By.Name("FirstName")).SendKeys(firstName);
-                driver.FindElement(By.Name("LastName")).SendKeys(lastName);
-                driver.FindElement(By.Name("Qualifications")).SendKeys(qualifications);
-
-                //salvestame õppejõu
-                driver.FindElement(
-                    By.CssSelector("form button[type='submit']")).Click();
-
-                /* Leiame loodud õppejõu */
-                var rows = driver.FindElements(By.CssSelector("table tbody tr")); //kõik tabeli read
-
-                //otsime rea, kus on meie sisestatud andmed
-                var createdRow = rows.FirstOrDefault(row =>
-                    row.Text.Contains(firstName) &&
-                    row.Text.Contains(lastName) &&
-                    row.Text.Contains(qualifications));
-
-                //kontrollime, et loodud õppejõud leiti nimekirjast
-                Assert.NotNull(createdRow);
-
-                /* Avame muutmislehe */
-                createdRow!.FindElement(By.LinkText("Edit")).Click(); //vajutame selle rea "Edit" lingile
-
-                /* Kontroll: väljad sisaldavad olemasolevaid andmeid */
-                //eesnime väli on eeltäidetud õppejõu praeguse eesnimega
-                Assert.Equal(
-                    firstName,
-                    driver.FindElement(By.Name("FirstName")).GetAttribute("value"));
-
-                //perekonnanime väli on eeltäidetud õppejõu praeguse perekonnanimega
-                Assert.Equal(
-                    lastName,
-                    driver.FindElement(By.Name("LastName")).GetAttribute("value"));
-
-                //kvalifikatsiooni väli on eeltäidetud õppejõu praeguse kvalifikatsiooniga
-                Assert.Equal(
-                    qualifications,
-                    driver.FindElement(By.Name("Qualifications")).GetAttribute("value"));
+                var firstNameElement = row.FindElements(By.TagName("td"))[0].Text;
+                if ((firstNameElement == uniqueId))
+                {
+                    isObjectFound = true;
+                    var clickAction = row.FindElement(By.LinkText("Edit"));
+                    clickAction.Click();
+                    break;
+                }
             }
-            finally
-            {
-                driver.Quit(); //sulgeme akna ka siis, kui test kukub läbi
-            }
+            Thread.Sleep(1000);
+            //find data
+            string edit_firstName = driver.FindElement(By.Name("FirstName")).GetAttribute("value");
+            string edit_lastName = driver.FindElement(By.Name("LastName")).GetAttribute("value");
+            string edit_qualifications = driver.FindElement(By.Name("Qualifications")).GetAttribute("value");
+            Thread.Sleep(500);
+            driver.Quit();
+
+            /* Kontroll */
+            Assert.True(isObjectFound);
+            Assert.NotEmpty(edit_firstName);
+            Assert.Equal(uniqueId, edit_firstName);
+            Assert.Equal("Automaattestija", edit_lastName);
+            Assert.Equal("Tarkvaraarendaja", edit_qualifications);
         }
-
 
         /// <summary>
         /// Kontrollib, et õppejõudude nimekirjas kuvatakse kõik vajalikud tabeli veerud.
         /// </summary>
         [Fact]
+        [Order(7)]
         public void Should_DisplayAllExpectedColumns_InLecturerList()
         {
             /* Ülesseade */
-            IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); //ootame elementide ilmumist kuni 5 sekundit
+            IWebDriver driver = TestSetup_NavigateToIndex();
 
-            try
+            /* tegevus */
+            var tableOfIndex = driver.FindElement(By.TagName("table"));
+            List<IWebElement> headersOfTable = tableOfIndex.FindElements(By.TagName("th")).ToList();
+            List<string> headers = new List<string>();
+            foreach (var header in headersOfTable)
             {
-                /* Tegevus: avame õppejõudude nimekirja */
-                driver.Navigate().GoToUrl("https://localhost:7191/"); //navigeeritav aadress
-                driver.FindElement(By.LinkText("Õppejõud")).Click(); //avame õppejõudude lehe
-
-                /* Leiame tabeli päised */
-                //kogume andmed: võtame kõikide päise lahtrite tekstid nimekirja
-                var headers = driver
-                    .FindElements(By.CssSelector("table thead th"))
-                    .Select(header => header.Text.Trim())
-                    .ToList();
-
-                /* Kontroll: kõik vajalikud veerud on olemas */
-                Assert.Contains("First name", headers); //eesnime veerg on olemas
-                Assert.Contains("Last name", headers); //perekonnanime veerg on olemas
-                Assert.Contains("Qualifications", headers); //kvalifikatsiooni veerg on olemas
-                Assert.Contains("Created at", headers); //loomise aja veerg on olemas
-                Assert.Contains("Modified at", headers); //muutmise aja veerg on olemas
-                Assert.Contains("Actions", headers); //tegevuste (Details/Edit/Delete) veerg on olemas
+                headers.Add(header.Text.Trim());
             }
-            finally
-            {
-                driver.Quit(); //sulgeme akna ka siis, kui test kukub läbi
-            }
+            //sulgeme akna
+            Thread.Sleep(500);
+            driver.Quit();
+
+            /* kontroll */
+            Assert.Contains("First name", headers);
+            Assert.Contains("Last name", headers);
+            Assert.Contains("Qualifications", headers);
+            Assert.Contains("Created at", headers);
+            Assert.Contains("Modified at", headers);
+            Assert.Contains("Actions", headers);
         }
-
 
         /// <summary>
         /// Kontrollib, et õppejõu loomise vormis kuvatakse kõik vajalikud väljad.
         /// </summary>
         [Fact]
+        [Order(8)]
         public void Should_DisplayAllFields_OnCreateLecturerPage()
         {
             /* Ülesseade */
+            IWebDriver driver = TestSetup_NavigateToIndex();
+
+            /* tegevus */
+            IWebElement indexCreateButton = driver.FindElement(By.LinkText("Add lecturer"));
+            indexCreateButton.Click(); //click on create button
+            Thread.Sleep(500);
+
+            //kogume andmed
+            bool isFirstNameDisplayed = driver.FindElement(By.Name("FirstName")).Displayed;
+            bool isLastNameDisplayed = driver.FindElement(By.Name("LastName")).Displayed;
+            bool isQualificationsDisplayed = driver.FindElement(By.Name("Qualifications")).Displayed;
+            bool isCreateButtonDisplayed = driver.FindElement(By.CssSelector("form button[type='submit']")).Displayed;
+            //sulgeme akna
+            Thread.Sleep(500);
+            driver.Quit();
+
+            /* kontroll */
+            Assert.True(isFirstNameDisplayed);
+            Assert.True(isLastNameDisplayed);
+            Assert.True(isQualificationsDisplayed);
+            Assert.True(isCreateButtonDisplayed);
+            Assert.True(isFirstNameDisplayed && isLastNameDisplayed && isQualificationsDisplayed);
+        }
+
+        //eof
+
+        /// <summary>
+        /// Puhastab andmeväljad meetodile kaasaantud draiveri sessioonis
+        /// </summary>
+        /// <param name="driver">Hetkel käsitletav draiver</param>
+        private void DataClear_CreateUpdate(IWebDriver driver)
+        {
+            IWebElement createEntryFirstName = driver.FindElement(By.Name("FirstName"));
+            createEntryFirstName.Clear();
+            IWebElement createEntryLastName = driver.FindElement(By.Name("LastName"));
+            createEntryLastName.Clear();
+            IWebElement createEntryQualifications = driver.FindElement(By.Name("Qualifications"));
+            createEntryQualifications.Clear();
+        }
+        /// <summary>
+        /// Puhastab andmeväljad meetodile kaasaantud draiveri sessioonis
+        /// välja arvatud eesnime väli
+        /// </summary>
+        /// <param name="driver">Hetkel käsitletav draiver</param>
+        private void DataClear_CreateUpdate_SaveName(IWebDriver driver)
+        {
+            IWebElement createEntryLastName = driver.FindElement(By.Name("LastName"));
+            createEntryLastName.Clear();
+            IWebElement createEntryQualifications = driver.FindElement(By.Name("Qualifications"));
+            createEntryQualifications.Clear();
+        }
+
+        /// <summary>
+        /// Meetod mis testimise eesmärgil sisestab lehel andmeid, on võimalik konfigureerida.
+        /// </summary>
+        /// <param name="driver">WebDriver mida hetkel test rakendab</param>
+        /// <param name="isOneOrTwo">Muutuja mis valib kahe erineva andmekomplekti vahel</param>
+        /// <param name="updateName">Muutuja mis ütleb kas eesnime on vaja muuta (eesnimes hoitakse testimiseks vajalikku unikaalset Guidi)</param>
+        /// <returns>Tagastab lisatud Guidi stringi kujul mis pandi eesnime välja (Kui on konfigureeritud nii)</returns>
+        private static string DataEntry_Lecturer(IWebDriver driver, bool isOneOrTwo = false, bool updateName = true)
+        {
+            Guid generatedId = Guid.NewGuid();
+            if (updateName)
+            {
+                IWebElement createEntryFirstName = driver.FindElement(By.Name("FirstName"));
+                createEntryFirstName.SendKeys(generatedId.ToString());
+            }
+
+            if (!isOneOrTwo)
+            {
+                IWebElement createEntryLastName = driver.FindElement(By.Name("LastName"));
+                createEntryLastName.SendKeys("Automaattestija");
+                IWebElement createEntryQualifications = driver.FindElement(By.Name("Qualifications"));
+                createEntryQualifications.SendKeys("Tarkvaraarendaja");
+            }
+            else
+            {
+                IWebElement createEntryLastName = driver.FindElement(By.Name("LastName"));
+                createEntryLastName.SendKeys("Analüütik");
+                IWebElement createEntryQualifications = driver.FindElement(By.Name("Qualifications"));
+                createEntryQualifications.SendKeys("Testiinsener");
+            }
+            return generatedId.ToString();
+        }
+        /// <summary>
+        /// Ülesseade meetod mis tekitab draiveri, navigeerib aadressile ja vajutab Õppejõudude lingile.
+        /// </summary>
+        /// <returns>Tagastab testisiseselt kasutatava draiveri</returns>
+        private static IWebDriver TestSetup_NavigateToIndex()
+        {
             IWebDriver driver = new FirefoxDriver(); //brauserit juhtiv ja seal tegutsev draiver
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(5); //ootame elementide ilmumist kuni 5 sekundit
-
-            try
-            {
-                /* Avame õppejõu loomise lehe */
-                driver.Navigate().GoToUrl("https://localhost:7191/"); //navigeeritav aadress
-                driver.FindElement(By.LinkText("Õppejõud")).Click(); //avame õppejõudude lehe
-                driver.FindElement(By.LinkText("Add lecturer")).Click(); //vajutame loomise nupule
-
-                /* Kontrollime vormi välju */
-                Assert.True(driver.FindElement(By.Name("FirstName")).Displayed); //eesnime väli on nähtav
-                Assert.True(driver.FindElement(By.Name("LastName")).Displayed); //perekonnanime väli on nähtav
-                Assert.True(driver.FindElement(By.Name("Qualifications")).Displayed); //kvalifikatsiooni väli on nähtav
-            }
-            finally
-            {
-                driver.Quit(); //sulgeme akna ka siis, kui test kukub läbi
-            }
+            driver.Url = "https://localhost:7191/"; //navigeeritav aadress
+            Thread.Sleep(3000);
+            IWebElement navigateToLecturers = driver.FindElement(By.LinkText("Õppejõud"));//otsime tesitava osa lingi
+            navigateToLecturers.Click(); //simuleeritud tegevus elemendiga, antud juhul klikk
+            return driver;
         }
     }
 }
